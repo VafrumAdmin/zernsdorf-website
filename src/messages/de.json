@@ -1,0 +1,160 @@
+{
+  "common": {
+    "loading": "Lädt...",
+    "error": "Ein Fehler ist aufgetreten",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "search": "Suchen",
+    "noResults": "Keine Ergebnisse gefunden",
+    "language": "Sprache",
+    "theme": "Design",
+    "lightMode": "Hell",
+    "darkMode": "Dunkel",
+    "systemMode": "System"
+  },
+  "nav": {
+    "home": "Startseite",
+    "waste": "Müllabfuhr",
+    "traffic": "Verkehr & Baustellen",
+    "events": "Veranstaltungen",
+    "history": "Geschichte",
+    "settings": "Einstellungen",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "register": "Registrieren"
+  },
+  "home": {
+    "welcome": "Willkommen in Zernsdorf",
+    "subtitle": "Ihr digitales Dorfportal",
+    "description": "Alles Wichtige aus Zernsdorf auf einen Blick: Müllabfuhrtermine, Verkehrsinformationen, Veranstaltungen und mehr.",
+    "quickLinks": "Schnellzugriff",
+    "nextWasteCollection": "Nächste Müllabfuhr",
+    "currentConstructions": "Aktuelle Baustellen",
+    "upcomingEvents": "Kommende Veranstaltungen"
+  },
+  "waste": {
+    "title": "Müllabfuhr-Kalender",
+    "subtitle": "Ihre persönlichen Abholtermine",
+    "description": "Sehen Sie Ihre nächsten Müllabholtermine basierend auf Ihrer Adresse.",
+    "setupRequired": "Adresse einrichten",
+    "setupDescription": "Geben Sie Ihre Adresse ein, um Ihre persönlichen Abholtermine zu sehen.",
+    "street": "Straße",
+    "houseNumber": "Hausnummer",
+    "selectStreet": "Straße auswählen",
+    "types": {
+      "restmuell": "Restmüll",
+      "papier": "Papier",
+      "gelbesack": "Gelber Sack",
+      "bio": "Biotonne",
+      "laubsaecke": "Laubsäcke"
+    },
+    "nextCollection": "Nächste Abholung",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "inDays": "In {days} Tagen",
+    "enableNotifications": "Erinnerungen aktivieren",
+    "notifications": "Benachrichtigungen",
+    "privacyNote": "Ihre Daten werden nur lokal in Ihrem Browser gespeichert.",
+    "privacyNoteAccount": "Mit einem Account werden Ihre Einstellungen sicher in der Cloud gespeichert.",
+    "useLocalStorage": "Ohne Account (lokal speichern)",
+    "useAccount": "Mit Account speichern",
+    "calendarExport": "In Kalender exportieren",
+    "source": "Quelle: SBAZV"
+  },
+  "traffic": {
+    "title": "Verkehr & Baustellen",
+    "subtitle": "Aktuelle Verkehrslage in der Region",
+    "description": "Informationen zu Baustellen, Sperrungen und Verkehrseinschränkungen.",
+    "currentConstructions": "Aktuelle Baustellen",
+    "plannedConstructions": "Geplante Baustellen",
+    "noConstructions": "Derzeit keine Baustellen bekannt",
+    "status": {
+      "planned": "Geplant",
+      "active": "Aktiv",
+      "completed": "Abgeschlossen"
+    },
+    "from": "Von",
+    "until": "Bis",
+    "location": "Ort",
+    "source": "Quelle",
+    "lastUpdated": "Zuletzt aktualisiert"
+  },
+  "events": {
+    "title": "Veranstaltungen",
+    "subtitle": "Was ist los in Zernsdorf?",
+    "description": "Entdecken Sie lokale Veranstaltungen, Feste und Termine.",
+    "upcoming": "Kommende Veranstaltungen",
+    "past": "Vergangene Veranstaltungen",
+    "noEvents": "Keine Veranstaltungen gefunden",
+    "categories": {
+      "festival": "Fest",
+      "market": "Markt",
+      "culture": "Kultur",
+      "sports": "Sport",
+      "community": "Gemeinde",
+      "politics": "Politik",
+      "other": "Sonstiges"
+    },
+    "when": "Wann",
+    "where": "Wo",
+    "organizer": "Veranstalter",
+    "moreInfo": "Mehr erfahren"
+  },
+  "history": {
+    "title": "Geschichte von Zernsdorf",
+    "subtitle": "Vom kleinen Fischerdorf zur modernen Gemeinde",
+    "description": "Erfahren Sie mehr über die spannende Geschichte unseres Dorfes.",
+    "timeline": "Zeitleiste",
+    "categories": {
+      "founding": "Gründung",
+      "development": "Entwicklung",
+      "war": "Kriegszeit",
+      "modern": "Neuzeit",
+      "culture": "Kultur"
+    }
+  },
+  "auth": {
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "forgotPassword": "Passwort vergessen?",
+    "resetPassword": "Passwort zurücksetzen",
+    "loginSuccess": "Erfolgreich angemeldet",
+    "logoutSuccess": "Erfolgreich abgemeldet",
+    "registerSuccess": "Registrierung erfolgreich",
+    "invalidCredentials": "Ungültige Anmeldedaten",
+    "emailRequired": "E-Mail ist erforderlich",
+    "passwordRequired": "Passwort ist erforderlich",
+    "passwordMismatch": "Passwörter stimmen nicht überein",
+    "accountBenefits": "Mit einem Account können Sie:",
+    "benefit1": "Einstellungen geräteübergreifend speichern",
+    "benefit2": "E-Mail-Erinnerungen erhalten",
+    "benefit3": "Persönliche Kalender-Feeds nutzen",
+    "noAccountNeeded": "Kein Account benötigt",
+    "noAccountDescription": "Alle Funktionen sind auch ohne Account nutzbar. Ihre Daten werden dann nur lokal in Ihrem Browser gespeichert."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "general": "Allgemein",
+    "notifications": "Benachrichtigungen",
+    "privacy": "Datenschutz",
+    "account": "Account",
+    "deleteData": "Lokale Daten löschen",
+    "deleteDataConfirm": "Möchten Sie wirklich alle lokal gespeicherten Daten löschen?",
+    "dataDeleted": "Daten wurden gelöscht"
+  },
+  "footer": {
+    "about": "Über Zernsdorf",
+    "contact": "Kontakt",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "madeWith": "Gemacht mit ❤️ für Zernsdorf"
+  }
+}

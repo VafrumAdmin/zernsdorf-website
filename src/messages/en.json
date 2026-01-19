@@ -1,0 +1,160 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "noResults": "No results found",
+    "language": "Language",
+    "theme": "Theme",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "systemMode": "System"
+  },
+  "nav": {
+    "home": "Home",
+    "waste": "Waste Collection",
+    "traffic": "Traffic & Construction",
+    "events": "Events",
+    "history": "History",
+    "settings": "Settings",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register"
+  },
+  "home": {
+    "welcome": "Welcome to Zernsdorf",
+    "subtitle": "Your digital village portal",
+    "description": "Everything important from Zernsdorf at a glance: waste collection dates, traffic information, events and more.",
+    "quickLinks": "Quick Links",
+    "nextWasteCollection": "Next Waste Collection",
+    "currentConstructions": "Current Construction Sites",
+    "upcomingEvents": "Upcoming Events"
+  },
+  "waste": {
+    "title": "Waste Collection Calendar",
+    "subtitle": "Your personal collection dates",
+    "description": "View your next waste collection dates based on your address.",
+    "setupRequired": "Setup Address",
+    "setupDescription": "Enter your address to see your personal collection dates.",
+    "street": "Street",
+    "houseNumber": "House Number",
+    "selectStreet": "Select street",
+    "types": {
+      "restmuell": "Residual Waste",
+      "papier": "Paper",
+      "gelbesack": "Yellow Bag",
+      "bio": "Organic Waste",
+      "laubsaecke": "Leaf Bags"
+    },
+    "nextCollection": "Next Collection",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays": "In {days} days",
+    "enableNotifications": "Enable reminders",
+    "notifications": "Notifications",
+    "privacyNote": "Your data is only stored locally in your browser.",
+    "privacyNoteAccount": "With an account, your settings are securely stored in the cloud.",
+    "useLocalStorage": "Without account (store locally)",
+    "useAccount": "Save with account",
+    "calendarExport": "Export to calendar",
+    "source": "Source: SBAZV"
+  },
+  "traffic": {
+    "title": "Traffic & Construction",
+    "subtitle": "Current traffic situation in the region",
+    "description": "Information about construction sites, road closures and traffic restrictions.",
+    "currentConstructions": "Current Construction Sites",
+    "plannedConstructions": "Planned Construction Sites",
+    "noConstructions": "No construction sites known at this time",
+    "status": {
+      "planned": "Planned",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "from": "From",
+    "until": "Until",
+    "location": "Location",
+    "source": "Source",
+    "lastUpdated": "Last updated"
+  },
+  "events": {
+    "title": "Events",
+    "subtitle": "What's happening in Zernsdorf?",
+    "description": "Discover local events, festivals and dates.",
+    "upcoming": "Upcoming Events",
+    "past": "Past Events",
+    "noEvents": "No events found",
+    "categories": {
+      "festival": "Festival",
+      "market": "Market",
+      "culture": "Culture",
+      "sports": "Sports",
+      "community": "Community",
+      "politics": "Politics",
+      "other": "Other"
+    },
+    "when": "When",
+    "where": "Where",
+    "organizer": "Organizer",
+    "moreInfo": "Learn more"
+  },
+  "history": {
+    "title": "History of Zernsdorf",
+    "subtitle": "From small fishing village to modern community",
+    "description": "Learn more about the fascinating history of our village.",
+    "timeline": "Timeline",
+    "categories": {
+      "founding": "Founding",
+      "development": "Development",
+      "war": "War Period",
+      "modern": "Modern Era",
+      "culture": "Culture"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "loginSuccess": "Successfully logged in",
+    "logoutSuccess": "Successfully logged out",
+    "registerSuccess": "Registration successful",
+    "invalidCredentials": "Invalid credentials",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "passwordMismatch": "Passwords do not match",
+    "accountBenefits": "With an account you can:",
+    "benefit1": "Save settings across devices",
+    "benefit2": "Receive email reminders",
+    "benefit3": "Use personal calendar feeds",
+    "noAccountNeeded": "No account needed",
+    "noAccountDescription": "All features are available without an account. Your data will only be stored locally in your browser."
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "account": "Account",
+    "deleteData": "Delete local data",
+    "deleteDataConfirm": "Do you really want to delete all locally stored data?",
+    "dataDeleted": "Data has been deleted"
+  },
+  "footer": {
+    "about": "About Zernsdorf",
+    "contact": "Contact",
+    "imprint": "Imprint",
+    "privacy": "Privacy",
+    "madeWith": "Made with ❤️ for Zernsdorf"
+  }
+}
