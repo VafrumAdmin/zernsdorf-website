@@ -3,6 +3,7 @@
 import { Link } from '@/i18n/navigation';
 import { Trees, Mail, MapPin, Phone, Facebook, Instagram } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { CookieSettingsButton } from '@/components/cookie';
 
 export function Footer() {
   const { theme } = useTheme();
@@ -130,6 +131,7 @@ export function Footer() {
             <Link href="/privacy" className="hover:text-white transition-colors">
               Datenschutz
             </Link>
+            <CookieSettingsButton />
           </div>
         </div>
       </div>

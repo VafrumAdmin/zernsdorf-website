@@ -325,6 +325,26 @@ body {
 .animate-fadeInUp { animation: fadeInUp 0.4s ease-out forwards; }
 .animate-slideIn { animation: slideIn 0.3s ease-out forwards; }
 
+/* ==================== MAINTENANCE PAGE ANIMATIONS ==================== */
+@keyframes maintenance-progress {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 30%; }
+}
+
+@keyframes maintenance-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.maintenance-progress {
+  animation: maintenance-progress 3s ease-in-out infinite;
+}
+
+.maintenance-spin-slow {
+  animation: maintenance-spin-slow 8s linear infinite;
+}
+
 /* ==================== UTILITIES ==================== */
 .text-balance {
   text-wrap: balance;

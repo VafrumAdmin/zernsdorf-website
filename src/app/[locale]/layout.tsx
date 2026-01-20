@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout';
+import { CookieConsent } from '@/components/cookie';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -55,6 +56,8 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
 
+  // Wartungsmodus-Check wird im (public) Route Group Layout gehandhabt
+
   return (
     <html lang={locale}>
       <body
@@ -66,6 +69,7 @@ export default async function LocaleLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
+          <CookieConsent />
         </NextIntlClientProvider>
       </body>
     </html>

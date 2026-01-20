@@ -1,6 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './src/i18n/routing';
 
+// Die Wartungsmodus-Logik wird im (public) Route Group Layout gehandhabt
 export default createMiddleware(routing);
 
 export const config = {

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(echo {)",
+      "Bash(echo:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
