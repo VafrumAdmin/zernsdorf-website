@@ -44,7 +44,7 @@ export default function PrivacyPage() {
                   Gemeinde Zernsdorf<br />
                   15712 Königs Wusterhausen<br />
                   <br />
-                  E-Mail: info@zernsdorf.de<br />
+                  E-Mail: info@zernsdorf.info<br />
                   Telefon: 03375 / 123456
                 </p>
               </div>

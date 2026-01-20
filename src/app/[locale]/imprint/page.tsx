@@ -41,8 +41,8 @@ export default function ImprintPage() {
                 </p>
                 <p>
                   <strong>E-Mail:</strong>{' '}
-                  <a href="mailto:info@zernsdorf.de" className="text-emerald-600 hover:underline">
-                    info@zernsdorf.de
+                  <a href="mailto:info@zernsdorf.info" className="text-emerald-600 hover:underline">
+                    info@zernsdorf.info
                   </a>
                 </p>
               </div>

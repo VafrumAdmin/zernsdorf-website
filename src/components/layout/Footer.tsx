@@ -111,8 +111,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 flex-shrink-0 text-slate-500" />
-                <a href="mailto:info@zernsdorf.de" className="hover:text-white transition-colors">
-                  info@zernsdorf.de
+                <a href="mailto:info@zernsdorf.info" className="hover:text-white transition-colors">
+                  info@zernsdorf.info
                 </a>
               </li>
             </ul>

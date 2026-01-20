@@ -8,6 +8,7 @@ import { routing } from '@/i18n/routing';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout';
 import { CookieConsent } from '@/components/cookie';
+import { getMaintenanceStatus } from '@/lib/admin/maintenance';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -57,12 +58,18 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
 
-  // Prüfe ob wir auf der Maintenance-Seite sind
+  // Prüfe ob wir auf der Maintenance-Seite oder rechtlich relevanten Seiten sind
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') || '';
   const isMaintenancePage = pathname.includes('/maintenance');
+  const isLegalPage = pathname.includes('/imprint') || pathname.includes('/privacy');
 
-  // Wartungsmodus-Check wird im (public) Route Group Layout gehandhabt
+  // Prüfe Wartungsmodus-Status
+  const maintenanceStatus = await getMaintenanceStatus();
+  const isMaintenanceMode = maintenanceStatus.enabled;
+
+  // Im Wartungsmodus: Kein Header/Footer für Maintenance-Seite und rechtliche Seiten
+  const hideNavigation = isMaintenancePage || (isMaintenanceMode && isLegalPage);
 
   return (
     <html lang={locale}>
@@ -70,8 +77,8 @@ export default async function LocaleLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 text-slate-900`}
       >
         <NextIntlClientProvider messages={messages}>
-          {isMaintenancePage ? (
-            // Maintenance-Seite: Kein Header/Footer
+          {hideNavigation ? (
+            // Maintenance-Seite oder rechtliche Seiten im Wartungsmodus: Kein Header/Footer
             <>{children}</>
           ) : (
             // Normale Seiten: Mit Header/Footer

@@ -16,7 +16,10 @@
       "Bash(fi)",
       "Bash(done)",
       "Bash(npm run build:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(ls:*)",
+      "Bash(dir C:/Users/Administrator/zernsdorf-website/.env*)",
+      "Bash(cmd /c \"dir /a C:\\\\Users\\\\Administrator\\\\zernsdorf-website\\\\.env*\")"
     ]
   }
 }
