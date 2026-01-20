@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { routing } from '@/i18n/routing';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout';
@@ -56,6 +57,11 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
 
+  // Prüfe ob wir auf der Maintenance-Seite sind
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
+  const isMaintenancePage = pathname.includes('/maintenance');
+
   // Wartungsmodus-Check wird im (public) Route Group Layout gehandhabt
 
   return (
@@ -64,11 +70,17 @@ export default async function LocaleLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 text-slate-900`}
       >
         <NextIntlClientProvider messages={messages}>
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          {isMaintenancePage ? (
+            // Maintenance-Seite: Kein Header/Footer
+            <>{children}</>
+          ) : (
+            // Normale Seiten: Mit Header/Footer
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          )}
           <CookieConsent />
         </NextIntlClientProvider>
       </body>

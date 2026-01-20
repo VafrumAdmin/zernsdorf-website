@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { POI } from '@/app/[locale]/map/page';
+import type { POI } from '@/app/[locale]/(public)/map/page';
 
 // Fix for default marker icons in Leaflet with Next.js
 const createIcon = (color: string) => {

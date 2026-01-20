@@ -9,7 +9,14 @@
       "Bash(timeout /t 5 /nobreak)",
       "Bash(echo {)",
       "Bash(echo:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(for dir in community dashboard events history imprint map mobility privacy traffic transit waste)",
+      "Bash(do if [ -d \"$dir\" ])",
+      "Bash(then mv \"$dir\" \"\\(public\\)/$dir\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(npm run build:*)",
+      "Bash(powershell:*)"
     ]
   }
 }
