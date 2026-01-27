@@ -157,9 +157,10 @@ export default function HomePage() {
   // API Data States
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
-  const [transitDepartures, setTransitDepartures] = useState<TransitDeparture[]>([]);
+  const [trainDepartures, setTrainDepartures] = useState<TransitDeparture[]>([]);
+  const [busDepartures, setBusDepartures] = useState<TransitDeparture[]>([]);
   const [transitLoading, setTransitLoading] = useState(true);
-  const [transitStopName, setTransitStopName] = useState<string>('Bahnhof');
+  const [busStopName, setBusStopName] = useState<string>('');
   const [traffic, setTraffic] = useState<TrafficSegment[]>([]);
   const [trafficLoading, setTrafficLoading] = useState(true);
 
@@ -320,34 +321,79 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch Transit Data - uses user's preferred stop if available
+  // Fetch Transit Data - trains from Bahnhof + buses from user's stop
   useEffect(() => {
-    // Wait for preferences to load before fetching
     if (!prefsLoaded) return;
 
-    const stopId = preferences.nearestStop?.id || 'bahnhof';
-    const stopName = preferences.nearestStop?.name || 'Bahnhof';
-    setTransitStopName(stopName.replace('Zernsdorf, ', ''));
+    // Set bus stop name if user has one saved (and it's not the Bahnhof)
+    const userStopId = preferences.nearestStop?.id;
+    const userStopName = preferences.nearestStop?.name || '';
+    if (userStopId && userStopId !== 'bahnhof') {
+      setBusStopName(userStopName.replace('Zernsdorf, ', ''));
+    } else {
+      setBusStopName('');
+    }
 
     const fetchTransit = async () => {
       try {
-        const res = await fetch(`/api/transit?stop=${stopId}&limit=3`);
-        const data = await res.json();
-        if (data.departures && data.departures.length > 0) {
-          const transformed = data.departures.map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
-            line: dep.lineName,
-            direction: dep.direction,
-            time: dep.actualTime || dep.plannedTime,
-            delay: Math.round(dep.delay / 60),
-            product: dep.product,
-          }));
-          setTransitDepartures(transformed);
+        // Always fetch trains from Bahnhof
+        const trainRes = await fetch('/api/transit?stop=bahnhof&limit=3');
+        const trainData = await trainRes.json();
+
+        if (trainData.departures && trainData.departures.length > 0) {
+          const trains = trainData.departures
+            .filter((dep: { product: string }) => dep.product === 'regional')
+            .slice(0, 2)
+            .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
+              line: dep.lineName,
+              direction: dep.direction,
+              time: dep.actualTime || dep.plannedTime,
+              delay: Math.round(dep.delay / 60),
+              product: dep.product,
+            }));
+          setTrainDepartures(trains);
         } else {
-          setTransitDepartures([]);
+          setTrainDepartures([]);
+        }
+
+        // Fetch buses from user's stop (if different from Bahnhof)
+        if (userStopId && userStopId !== 'bahnhof') {
+          const busRes = await fetch(`/api/transit?stop=${userStopId}&limit=3`);
+          const busData = await busRes.json();
+
+          if (busData.departures && busData.departures.length > 0) {
+            const buses = busData.departures
+              .filter((dep: { product: string }) => dep.product === 'bus')
+              .slice(0, 2)
+              .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
+                line: dep.lineName,
+                direction: dep.direction,
+                time: dep.actualTime || dep.plannedTime,
+                delay: Math.round(dep.delay / 60),
+                product: dep.product,
+              }));
+            setBusDepartures(buses);
+          } else {
+            setBusDepartures([]);
+          }
+        } else {
+          // If no user stop or user stop is Bahnhof, get buses from Bahnhof
+          const buses = trainData.departures
+            ?.filter((dep: { product: string }) => dep.product === 'bus')
+            .slice(0, 2)
+            .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
+              line: dep.lineName,
+              direction: dep.direction,
+              time: dep.actualTime || dep.plannedTime,
+              delay: Math.round(dep.delay / 60),
+              product: dep.product,
+            })) || [];
+          setBusDepartures(buses);
         }
       } catch (error) {
         console.error('Transit fetch error:', error);
-        setTransitDepartures([]);
+        setTrainDepartures([]);
+        setBusDepartures([]);
       } finally {
         setTransitLoading(false);
       }
@@ -480,7 +526,7 @@ export default function HomePage() {
             <Link href="/transport" className="block h-full">
               <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 text-white hover:bg-white/20 hover:scale-[1.02] transition-all cursor-pointer group h-full flex flex-col">
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`font-medium text-sm uppercase tracking-wider ${t.accent}`}>ÖPNV • {transitStopName}</span>
+                  <span className={`font-medium text-sm uppercase tracking-wider ${t.accent}`}>ÖPNV • Zernsdorf</span>
                   <div className="flex items-center gap-2">
                     <Train className="text-red-300" />
                     <ArrowRight size={16} className="text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" />
@@ -491,34 +537,48 @@ export default function HomePage() {
                     <div className="h-8 bg-white/20 rounded w-20"></div>
                     <div className="h-3 bg-white/10 rounded w-full"></div>
                   </div>
-                ) : transitDepartures.length > 0 ? (
+                ) : (trainDepartures.length > 0 || busDepartures.length > 0) ? (
                   <div className="flex-1 flex flex-col">
-                    <div className="flex items-end space-x-2 mb-1">
-                      <span className="text-3xl font-bold">{getMinutesUntil(transitDepartures[0].time)}</span>
-                      <span className="text-lg font-normal mb-0.5">min</span>
-                      <span className={`text-sm mb-1 ${transitDepartures[0].product === 'regional' ? 'text-red-300' : 'text-blue-300'}`}>
-                        {transitDepartures[0].line}
-                      </span>
-                    </div>
-                    <div className={`text-sm ${t.accent} mb-2`}>
-                      → {transitDepartures[0].direction.replace(', Bahnhof', '').replace(' Bhf', '')}
-                      {transitDepartures[0].delay > 0 && (
-                        <span className="text-yellow-300 ml-2">+{transitDepartures[0].delay} Min</span>
-                      )}
-                    </div>
-                    {transitDepartures.length > 1 && (
-                      <div className={`text-xs ${t.accent} border-t border-white/20 pt-2 space-y-1`}>
-                        {transitDepartures.slice(1, 3).map((dep, idx) => (
-                          <div key={idx} className="flex justify-between">
+                    {/* Trains from Bahnhof */}
+                    {trainDepartures.length > 0 && (
+                      <div className="mb-2">
+                        <div className={`text-xs ${t.accent} mb-1`}>Bahnhof</div>
+                        {trainDepartures.map((dep, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-sm">
                             <span className="flex items-center gap-1">
-                              {dep.product === 'regional' ? <Train size={12} className="text-red-300" /> : <Bus size={12} className="text-blue-300" />}
-                              {dep.line} → {dep.direction.split(',')[0].split(' ')[0]}
+                              <Train size={12} className="text-red-300" />
+                              <span className="font-medium">{dep.line}</span>
+                              <span className={`${t.accent} text-xs`}>→ {dep.direction.replace(', Bahnhof', '').replace(' Bhf', '').split(',')[0]}</span>
                             </span>
-                            <span>{getMinutesUntil(dep.time)} min</span>
+                            <span className="font-bold">
+                              {getMinutesUntil(dep.time)} min
+                              {dep.delay > 0 && <span className="text-yellow-300 text-xs ml-1">+{dep.delay}</span>}
+                            </span>
                           </div>
                         ))}
                       </div>
                     )}
+
+                    {/* Buses from user's stop */}
+                    {busDepartures.length > 0 && (
+                      <div className={`${trainDepartures.length > 0 ? 'border-t border-white/20 pt-2' : ''}`}>
+                        <div className={`text-xs ${t.accent} mb-1`}>{busStopName || 'Bahnhof'}</div>
+                        {busDepartures.map((dep, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-sm">
+                            <span className="flex items-center gap-1">
+                              <Bus size={12} className="text-blue-300" />
+                              <span className="font-medium">{dep.line}</span>
+                              <span className={`${t.accent} text-xs`}>→ {dep.direction.split(',')[0].split(' ')[0]}</span>
+                            </span>
+                            <span className="font-bold">
+                              {getMinutesUntil(dep.time)} min
+                              {dep.delay > 0 && <span className="text-yellow-300 text-xs ml-1">+{dep.delay}</span>}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="mt-auto pt-3 border-t border-white/10 text-xs text-white/60 group-hover:text-white/80 transition">
                       Fahrpläne, KW & Anschlussrechner →
                     </div>
@@ -530,7 +590,10 @@ export default function HomePage() {
                     </div>
                     <div className={`text-xs ${t.accent} space-y-1`}>
                       <div className="flex items-center gap-2">
-                        <Bus size={12} className="text-blue-300" /> Abfahrten von {transitStopName}
+                        <Train size={12} className="text-red-300" /> RB36 vom Bahnhof
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Bus size={12} className="text-blue-300" /> 721, 723 {busStopName ? `von ${busStopName}` : 'nach KW'}
                       </div>
                     </div>
                     <div className="mt-auto pt-3 border-t border-white/10 text-xs text-white/60 group-hover:text-white/80 transition">
