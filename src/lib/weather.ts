@@ -30,6 +30,55 @@ export interface AirQualityData {
   pm10: number;
 }
 
+export interface HourlyForecast {
+  time: string;
+  temperature: number;
+  feelsLike: number;
+  humidity: number;
+  windSpeed: number;
+  windDirection: number;
+  weatherCode: number;
+  description: string;
+  icon: string;
+  precipitation: number;
+  precipitationProbability: number;
+  cloudCover: number;
+  visibility: number;
+  uvIndex: number;
+}
+
+export interface DailyForecast {
+  date: string;
+  temperatureMax: number;
+  temperatureMin: number;
+  weatherCode: number;
+  description: string;
+  icon: string;
+  precipitation: number;
+  precipitationProbability: number;
+  windSpeedMax: number;
+  windDirection: number;
+  sunrise: string;
+  sunset: string;
+  uvIndexMax: number;
+}
+
+export interface WeatherForecast {
+  current: WeatherData;
+  hourly: HourlyForecast[];
+  daily: DailyForecast[];
+  alerts?: WeatherAlert[];
+}
+
+export interface WeatherAlert {
+  event: string;
+  headline: string;
+  description: string;
+  severity: 'minor' | 'moderate' | 'severe' | 'extreme';
+  start: string;
+  end: string;
+}
+
 // WMO Weather Codes zu Beschreibung und Icon
 function getWeatherFromWMO(code: number, isDay: boolean): { description: string; icon: string } {
   const dayNight = isDay ? 'd' : 'n';
@@ -252,4 +301,182 @@ export function getWindDirection(degrees: number): string {
   const directions = ['N', 'NNO', 'NO', 'ONO', 'O', 'OSO', 'SO', 'SSO', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
   const index = Math.round(degrees / 22.5) % 16;
   return directions[index];
+}
+
+/**
+ * Holt erweiterte Wetterdaten mit Vorhersage von Open-Meteo
+ */
+export async function fetchWeatherForecast(): Promise<WeatherForecast | null> {
+  try {
+    // Stündliche und tägliche Vorhersage
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${ZERNSDORF_LAT}&longitude=${ZERNSDORF_LON}` +
+      `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,is_day,precipitation` +
+      `&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,uv_index` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant` +
+      `&timezone=Europe%2FBerlin&forecast_days=14`
+    );
+
+    if (!response.ok) {
+      console.error('Open-Meteo Forecast API error:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const current = data.current;
+    const hourly = data.hourly;
+    const daily = data.daily;
+
+    const isDay = current.is_day === 1;
+    const currentWeather = getWeatherFromWMO(current.weather_code, isDay);
+
+    // Current Weather
+    const currentData: WeatherData = {
+      temperature: current.temperature_2m,
+      feelsLike: current.apparent_temperature,
+      humidity: current.relative_humidity_2m,
+      windSpeed: current.wind_speed_10m,
+      windDirection: current.wind_direction_10m,
+      description: currentWeather.description,
+      icon: currentWeather.icon,
+      pressure: current.pressure_msl,
+      visibility: 10,
+      clouds: current.cloud_cover,
+      sunrise: new Date(daily.sunrise[0]),
+      sunset: new Date(daily.sunset[0]),
+    };
+
+    // Hourly Forecast (next 48 hours)
+    const hourlyData: HourlyForecast[] = [];
+    const now = new Date();
+
+    // Parse sunrise/sunset times für jeden Tag
+    const sunTimes: { [date: string]: { sunrise: Date; sunset: Date } } = {};
+    for (let i = 0; i < daily.time.length; i++) {
+      sunTimes[daily.time[i]] = {
+        sunrise: new Date(daily.sunrise[i]),
+        sunset: new Date(daily.sunset[i]),
+      };
+    }
+
+    for (let i = 0; i < Math.min(hourly.time.length, 336); i++) { // Bis zu 14 Tage (336 Stunden)
+      const time = new Date(hourly.time[i]);
+      if (time < now) continue; // Skip past hours
+
+      // Bestimme ob es Tag oder Nacht ist basierend auf echten Sonnenzeiten
+      const dateKey = hourly.time[i].split('T')[0];
+      const dayTimes = sunTimes[dateKey];
+      let hourIsDay = false;
+      if (dayTimes) {
+        hourIsDay = time >= dayTimes.sunrise && time < dayTimes.sunset;
+      } else {
+        // Fallback: Winter in Brandenburg ca. 8-16:30 Uhr
+        const hour = time.getHours();
+        hourIsDay = hour >= 8 && hour < 17;
+      }
+
+      const weatherInfo = getWeatherFromWMO(hourly.weather_code[i], hourIsDay);
+
+      hourlyData.push({
+        time: hourly.time[i],
+        temperature: hourly.temperature_2m[i],
+        feelsLike: hourly.apparent_temperature[i],
+        humidity: hourly.relative_humidity_2m[i],
+        windSpeed: hourly.wind_speed_10m[i],
+        windDirection: hourly.wind_direction_10m[i],
+        weatherCode: hourly.weather_code[i],
+        description: weatherInfo.description,
+        icon: weatherInfo.icon,
+        precipitation: hourly.precipitation[i],
+        precipitationProbability: hourly.precipitation_probability[i],
+        cloudCover: hourly.cloud_cover[i],
+        visibility: hourly.visibility[i] / 1000, // m to km
+        uvIndex: hourly.uv_index[i],
+      });
+    }
+
+    // Daily Forecast (up to 14 days)
+    const dailyData: DailyForecast[] = [];
+    for (let i = 0; i < daily.time.length; i++) {
+      const weatherInfo = getWeatherFromWMO(daily.weather_code[i], true);
+
+      dailyData.push({
+        date: daily.time[i],
+        temperatureMax: daily.temperature_2m_max[i],
+        temperatureMin: daily.temperature_2m_min[i],
+        weatherCode: daily.weather_code[i],
+        description: weatherInfo.description,
+        icon: weatherInfo.icon,
+        precipitation: daily.precipitation_sum[i],
+        precipitationProbability: daily.precipitation_probability_max[i],
+        windSpeedMax: daily.wind_speed_10m_max[i],
+        windDirection: daily.wind_direction_10m_dominant[i],
+        sunrise: daily.sunrise[i],
+        sunset: daily.sunset[i],
+        uvIndexMax: daily.uv_index_max[i],
+      });
+    }
+
+    return {
+      current: currentData,
+      hourly: hourlyData,
+      daily: dailyData,
+    };
+  } catch (error) {
+    console.error('Failed to fetch weather forecast:', error);
+    return null;
+  }
+}
+
+/**
+ * Holt Pollenflug-Daten (falls verfügbar)
+ */
+export interface PollenData {
+  grass: number;
+  birch: number;
+  alder: number;
+  mugwort: number;
+  ragweed: number;
+  olive: number;
+}
+
+export async function fetchPollenData(): Promise<PollenData | null> {
+  try {
+    const response = await fetch(
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${ZERNSDORF_LAT}&longitude=${ZERNSDORF_LON}&current=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,ragweed_pollen,olive_pollen`
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const current = data.current;
+
+    return {
+      grass: current.grass_pollen || 0,
+      birch: current.birch_pollen || 0,
+      alder: current.alder_pollen || 0,
+      mugwort: current.mugwort_pollen || 0,
+      ragweed: current.ragweed_pollen || 0,
+      olive: current.olive_pollen || 0,
+    };
+  } catch (error) {
+    console.error('Failed to fetch pollen data:', error);
+    return null;
+  }
+}
+
+export function getPollenLevel(value: number): { level: string; color: string } {
+  if (value === 0) return { level: 'Keine', color: '#10b981' };
+  if (value < 20) return { level: 'Gering', color: '#22c55e' };
+  if (value < 50) return { level: 'Mäßig', color: '#f59e0b' };
+  if (value < 100) return { level: 'Hoch', color: '#f97316' };
+  return { level: 'Sehr hoch', color: '#ef4444' };
+}
+
+export function getUVIndexLevel(uv: number): { level: string; color: string; advice: string } {
+  if (uv < 3) return { level: 'Niedrig', color: '#22c55e', advice: 'Kein Schutz erforderlich' };
+  if (uv < 6) return { level: 'Mäßig', color: '#f59e0b', advice: 'Sonnenschutz empfohlen' };
+  if (uv < 8) return { level: 'Hoch', color: '#f97316', advice: 'Schutz erforderlich' };
+  if (uv < 11) return { level: 'Sehr hoch', color: '#ef4444', advice: 'Starker Schutz nötig' };
+  return { level: 'Extrem', color: '#7c3aed', advice: 'Mittagssonne meiden' };
 }

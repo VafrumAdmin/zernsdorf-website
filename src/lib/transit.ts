@@ -3,6 +3,9 @@
 
 const VBB_API_BASE = 'https://v6.vbb.transport.rest';
 
+// Königs Wusterhausen Bahnhof Station ID
+export const KW_BAHNHOF_ID = '900260001';
+
 export interface TransitStop {
   id: string;
   vbbId: string;
@@ -390,4 +393,165 @@ export function getLineColor(lineName: string): string {
  */
 export function getProductIcon(product: 'bus' | 'regional'): string {
   return product === 'regional' ? '🚆' : '🚌';
+}
+
+/**
+ * Holt Abfahrten für Königs Wusterhausen Bahnhof
+ * Mit optionalem Filter für Produkte
+ */
+export async function fetchKWDepartures(
+  products: ('regional' | 'suburban' | 'bus')[] = ['regional', 'suburban', 'bus'],
+  duration: number = 60
+): Promise<TransitDeparture[]> {
+  // Build URL with product filters
+  let url = `${VBB_API_BASE}/stops/${KW_BAHNHOF_ID}/departures?duration=${duration}`;
+
+  // Add product filters
+  const allProducts = ['suburban', 'subway', 'tram', 'bus', 'ferry', 'express', 'regional'];
+  for (const prod of allProducts) {
+    const enabled = products.includes(prod as 'regional' | 'suburban' | 'bus');
+    url += `&${prod}=${enabled ? 'true' : 'false'}`;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal,
+      next: { revalidate: 30 },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`VBB API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const departures: TransitDeparture[] = [];
+    const rawDepartures = Array.isArray(data) ? data : data.departures || [];
+
+    for (const dep of rawDepartures) {
+      const line = dep.line || {};
+      let product: 'bus' | 'regional' = 'bus';
+      if (line.product === 'regional' || line.product === 'suburban' || line.product === 'express') {
+        product = 'regional';
+      }
+
+      departures.push({
+        line: line.id || '',
+        lineName: line.name || '',
+        direction: dep.direction || '',
+        plannedTime: new Date(dep.plannedWhen || dep.when),
+        actualTime: dep.when ? new Date(dep.when) : null,
+        delay: dep.delay || 0,
+        platform: dep.platform || undefined,
+        stop: dep.stop?.name || 'Königs Wusterhausen',
+        stopId: dep.stop?.id || KW_BAHNHOF_ID,
+        product,
+        operator: line.operator?.name || undefined,
+        cancelled: dep.cancelled || false,
+      });
+    }
+
+    return departures.filter(d => !d.cancelled);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.log('[Transit] Timeout for KW Bahnhof');
+    } else {
+      console.error('[Transit] Error fetching KW:', error);
+    }
+    return [];
+  }
+}
+
+/**
+ * Berechnet ob man einen Zug in KW noch erreichen kann
+ */
+export interface ConnectionCheck {
+  targetDeparture: TransitDeparture;
+  canReachByCar: boolean;
+  canReachByBus: boolean;
+  canReachByTrain: boolean;
+  carTravelTime: number; // in minutes
+  busDeparture?: TransitDeparture;
+  trainDeparture?: TransitDeparture;
+  bufferTime: number; // minutes until target departure
+  recommendation: 'car' | 'bus' | 'train' | 'unlikely';
+}
+
+/**
+ * Prüft Anschlussmöglichkeiten zum KW Bahnhof
+ */
+export function checkConnection(
+  targetDeparture: TransitDeparture,
+  zernsdorfDepartures: TransitDeparture[],
+  trafficLevel: 'frei' | 'leicht' | 'stockend' | 'stau' = 'frei'
+): ConnectionCheck {
+  const now = new Date();
+  const targetTime = targetDeparture.actualTime || targetDeparture.plannedTime;
+  const bufferTime = Math.round((targetTime.getTime() - now.getTime()) / 60000);
+
+  // Auto-Fahrzeit nach KW je nach Verkehrslage
+  const carTravelTimes: Record<string, number> = {
+    frei: 8,      // 8 Minuten bei freier Fahrt
+    leicht: 10,   // 10 Minuten bei leichtem Verkehr
+    stockend: 15, // 15 Minuten bei stockendem Verkehr
+    stau: 25,     // 25 Minuten bei Stau
+  };
+  const carTravelTime = carTravelTimes[trafficLevel] || 10;
+  const carArrivalBuffer = 5; // 5 Minuten Puffer fürs Parken
+
+  // Prüfe ob Auto es schafft
+  const canReachByCar = bufferTime >= carTravelTime + carArrivalBuffer;
+
+  // Finde passenden Bus/Zug von Zernsdorf
+  const requiredArrivalTime = new Date(targetTime.getTime() - 5 * 60000); // 5 Min Umsteigezeit
+
+  const connectingTransit = zernsdorfDepartures
+    .filter(dep => {
+      const depTime = dep.actualTime || dep.plannedTime;
+      // Abfahrt muss nach jetzt sein und Ankunft vor Zielzug
+      if (depTime <= now) return false;
+
+      // Geschätzte Ankunftszeit (Bus ~12 Min, Zug ~8 Min nach KW)
+      const travelTime = dep.product === 'regional' ? 8 : 12;
+      const arrivalTime = new Date(depTime.getTime() + travelTime * 60000);
+      return arrivalTime <= requiredArrivalTime;
+    })
+    .sort((a, b) => {
+      const timeA = (a.actualTime || a.plannedTime).getTime();
+      const timeB = (b.actualTime || b.plannedTime).getTime();
+      return timeB - timeA; // Späteste passende Verbindung zuerst
+    });
+
+  const busDeparture = connectingTransit.find(d => d.product === 'bus');
+  const trainDeparture = connectingTransit.find(d => d.product === 'regional');
+
+  const canReachByBus = !!busDeparture;
+  const canReachByTrain = !!trainDeparture;
+
+  // Empfehlung
+  let recommendation: 'car' | 'bus' | 'train' | 'unlikely' = 'unlikely';
+  if (canReachByTrain) {
+    recommendation = 'train';
+  } else if (canReachByBus) {
+    recommendation = 'bus';
+  } else if (canReachByCar) {
+    recommendation = 'car';
+  }
+
+  return {
+    targetDeparture,
+    canReachByCar,
+    canReachByBus,
+    canReachByTrain,
+    carTravelTime,
+    busDeparture,
+    trainDeparture,
+    bufferTime,
+    recommendation,
+  };
 }

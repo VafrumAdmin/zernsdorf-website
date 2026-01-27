@@ -3,7 +3,8 @@ import { setRequestLocale } from 'next-intl/server';
 import { ConstructionList } from '@/components/traffic';
 import { getActiveConstructions, getPlannedConstructions } from '@/lib/traffic/mock-data';
 import { Card, CardContent } from '@/components/ui';
-import { Construction, Clock, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Construction, Clock, AlertTriangle, ExternalLink, Car } from 'lucide-react';
+import { LiveTrafficSection } from '@/components/traffic/LiveTrafficSection';
 
 export default async function TrafficPage({
   params,
@@ -24,15 +25,18 @@ function TrafficPageContent() {
 
   return (
     <div className="min-h-screen py-8 lg:py-12">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="mt-2 text-muted-foreground">{t('description')}</p>
         </div>
 
+        {/* Live Traffic Section */}
+        <LiveTrafficSection />
+
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 mt-8">
           <Card className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">

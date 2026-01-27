@@ -19,7 +19,31 @@
       "Bash(powershell:*)",
       "Bash(ls:*)",
       "Bash(dir C:/Users/Administrator/zernsdorf-website/.env*)",
-      "Bash(cmd /c \"dir /a C:\\\\Users\\\\Administrator\\\\zernsdorf-website\\\\.env*\")"
+      "Bash(cmd /c \"dir /a C:\\\\Users\\\\Administrator\\\\zernsdorf-website\\\\.env*\")",
+      "Bash(netstat:*)",
+      "Bash(del /Q \"C:\\\\Users\\\\Administrator\\\\zernsdorf-website\\\\.next\\\\dev\\\\lock\")",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(start /B npm run dev)",
+      "Bash(cmd /c \"del /f /s /q C:\\\\Users\\\\Administrator\\\\zernsdorf-website\\\\.next\\\\dev\\\\lock 2>nul\")",
+      "Bash(docker:*)",
+      "Bash(npx supabase init:*)",
+      "Bash(npx supabase:*)",
+      "Bash(cat:*)",
+      "Bash(ss:*)",
+      "Bash(\"C:\\\\Users\\\\Administrator\\\\zernsdorf-website\\\\src\\\\app\\\\[locale]\\\\admin\\\\users\\\\page.tsx\")",
+      "Bash(\"C:/Users/Administrator/zernsdorf-website/src/app/[locale]/admin/users/page.tsx\")",
+      "Bash(\"C:/Users/Administrator/zernsdorf-website/src/app/[locale]/admin/roles/page.tsx\")",
+      "Bash(where:*)",
+      "Bash(start \"\" \"https://supabase.com/dashboard/project/hkamkujwnpvktcjlhrbq/sql/new\")",
+      "Bash(python3:*)",
+      "Bash(dir /b \"C:\\\\Users\\\\Administrator\\\\zernsdorf-website\\\\src\\\\app\\\\[locale]\\\\\\(public\\)\\\\mobility\")",
+      "Bash(node:*)",
+      "Bash(python -c:*)",
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)",
+      "Bash(wmic process where \"name=''node.exe''\" delete)",
+      "Bash(git add:*)"
     ]
   }
 }

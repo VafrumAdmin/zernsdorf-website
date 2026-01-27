@@ -8,6 +8,7 @@ import { routing } from '@/i18n/routing';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout';
 import { CookieConsent } from '@/components/cookie';
+import { UserPreferencesProvider } from '@/components/providers/UserPreferencesProvider';
 import { getMaintenanceStatus } from '@/lib/admin/maintenance';
 import '../globals.css';
 
@@ -77,18 +78,20 @@ export default async function LocaleLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 text-slate-900`}
       >
         <NextIntlClientProvider messages={messages}>
-          {hideNavigation ? (
-            // Maintenance-Seite oder rechtliche Seiten im Wartungsmodus: Kein Header/Footer
-            <>{children}</>
-          ) : (
-            // Normale Seiten: Mit Header/Footer
-            <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-          )}
-          <CookieConsent />
+          <UserPreferencesProvider>
+            {hideNavigation ? (
+              // Maintenance-Seite oder rechtliche Seiten im Wartungsmodus: Kein Header/Footer
+              <>{children}</>
+            ) : (
+              // Normale Seiten: Mit Header/Footer
+              <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            )}
+            <CookieConsent />
+          </UserPreferencesProvider>
         </NextIntlClientProvider>
       </body>
     </html>
