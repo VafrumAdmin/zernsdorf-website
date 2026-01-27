@@ -347,36 +347,37 @@ export function useUserPreferences(): UserPreferencesContextType {
  * Maps the auth profile (from useAuth) to UserPreferences
  * This is the main sync - profile is the source of truth for logged in users
  */
-function mapProfileToPreferences(profile: Record<string, unknown>): Partial<UserPreferences> {
+function mapProfileToPreferences(profile: Record<string, unknown> | object): Partial<UserPreferences> {
+  const data = profile as Record<string, unknown>;
   const prefs: Partial<UserPreferences> = {};
 
   // Address from profile
-  if (profile.street) {
+  if (data.street) {
     prefs.address = {
-      street: (profile.street as string) || '',
-      houseNumber: (profile.house_number as string) || '',
-      postalCode: (profile.postal_code as string) || '',
-      city: (profile.city as string) || 'Zernsdorf',
+      street: (data.street as string) || '',
+      houseNumber: (data.house_number as string) || '',
+      postalCode: (data.postal_code as string) || '',
+      city: (data.city as string) || 'Zernsdorf',
     };
   }
 
   // Work address from profile
-  if (profile.work_street) {
+  if (data.work_street) {
     prefs.workAddress = {
-      street: (profile.work_street as string) || '',
-      houseNumber: (profile.work_house_number as string) || '',
-      postalCode: (profile.work_postal_code as string) || '',
-      city: (profile.work_city as string) || '',
+      street: (data.work_street as string) || '',
+      houseNumber: (data.work_house_number as string) || '',
+      postalCode: (data.work_postal_code as string) || '',
+      city: (data.work_city as string) || '',
     };
   }
 
   // Work arrival time
-  if (profile.work_arrival_time) {
-    prefs.workArrivalTime = profile.work_arrival_time as string;
+  if (data.work_arrival_time) {
+    prefs.workArrivalTime = data.work_arrival_time as string;
   }
 
   // Favorite bus stops from profile - convert VBB IDs to NearestStop objects
-  const favStops = profile.favorite_bus_stops as string[] | undefined;
+  const favStops = data.favorite_bus_stops as string[] | undefined;
   if (Array.isArray(favStops) && favStops.length > 0) {
     // First favorite stop is the "nearest" stop
     const firstStopVbbId = favStops[0];
@@ -407,22 +408,22 @@ function mapProfileToPreferences(profile: Record<string, unknown>): Partial<User
   }
 
   // Waste settings
-  if (profile.waste_street_id) {
-    prefs.wasteStreetId = profile.waste_street_id as string;
+  if (data.waste_street_id) {
+    prefs.wasteStreetId = data.waste_street_id as string;
   }
-  if (profile.waste_notifications !== undefined) {
-    prefs.wasteNotifications = Boolean(profile.waste_notifications);
+  if (data.waste_notifications !== undefined) {
+    prefs.wasteNotifications = Boolean(data.waste_notifications);
   }
-  if (profile.waste_notification_time) {
-    prefs.wasteNotificationTime = profile.waste_notification_time as string;
+  if (data.waste_notification_time) {
+    prefs.wasteNotificationTime = data.waste_notification_time as string;
   }
 
   // Theme and language
-  if (profile.theme) {
-    prefs.theme = profile.theme as 'light' | 'dark' | 'system';
+  if (data.theme) {
+    prefs.theme = data.theme as 'light' | 'dark' | 'system';
   }
-  if (profile.preferred_language) {
-    prefs.language = profile.preferred_language as 'de' | 'en';
+  if (data.preferred_language) {
+    prefs.language = data.preferred_language as 'de' | 'en';
   }
 
   return prefs;
