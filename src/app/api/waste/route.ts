@@ -133,9 +133,14 @@ async function fetchIcsData(icsUrl: string): Promise<{
     console.log('[SBAZV] Method failed, trying next...');
   }
 
-  // Alle Methoden fehlgeschlagen - generiere Fallback-Daten
-  console.log('[SBAZV] All methods failed, using fallback data');
-  return generateFallbackData();
+  // Alle Methoden fehlgeschlagen
+  console.log('[SBAZV] All methods failed');
+  return {
+    success: false,
+    collections: [],
+    source: 'fallback',
+    error: 'SBAZV-Server nicht erreichbar. Bitte kontaktiere Hostinger-Support um ausgehende Verbindungen zu 212.91.241.6:443 freizuschalten, oder lade eine ICS-Datei manuell hoch.',
+  };
 }
 
 // Direkter Abruf
@@ -252,69 +257,3 @@ function processIcsContent(icsContent: string): {
   };
 }
 
-// Fallback-Daten generieren wenn SBAZV nicht erreichbar
-function generateFallbackData(): {
-  success: boolean;
-  collections: any[];
-  source: 'sbazv' | 'fallback';
-  address?: string;
-  error?: string;
-} {
-  const collections: any[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const getNextWeekday = (start: Date, targetDay: number): Date => {
-    const result = new Date(start);
-    const currentDay = result.getDay();
-    let daysToAdd = targetDay - currentDay;
-    if (daysToAdd <= 0) daysToAdd += 7;
-    result.setDate(result.getDate() + daysToAdd);
-    return result;
-  };
-
-  // Restmüll: 14-tägig am Dienstag
-  let restmuellDate = getNextWeekday(today, 2);
-  for (let i = 0; i < 12; i++) {
-    collections.push({
-      id: `fallback-restmuell-${i}`,
-      date: new Date(restmuellDate).toISOString(),
-      type: 'restmuell',
-      street: 'Zernsdorf',
-    });
-    restmuellDate.setDate(restmuellDate.getDate() + 14);
-  }
-
-  // Papier: 4-wöchig am Mittwoch
-  let papierDate = getNextWeekday(today, 3);
-  papierDate.setDate(papierDate.getDate() + 7);
-  for (let i = 0; i < 6; i++) {
-    collections.push({
-      id: `fallback-papier-${i}`,
-      date: new Date(papierDate).toISOString(),
-      type: 'papier',
-      street: 'Zernsdorf',
-    });
-    papierDate.setDate(papierDate.getDate() + 28);
-  }
-
-  // Gelber Sack: 14-tägig am Donnerstag
-  let gelbDate = getNextWeekday(today, 4);
-  for (let i = 0; i < 12; i++) {
-    collections.push({
-      id: `fallback-gelbesack-${i}`,
-      date: new Date(gelbDate).toISOString(),
-      type: 'gelbesack',
-      street: 'Zernsdorf',
-    });
-    gelbDate.setDate(gelbDate.getDate() + 14);
-  }
-
-  return {
-    success: true,
-    collections: collections.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    source: 'fallback',
-    address: 'Zernsdorf (Beispieldaten)',
-    error: 'SBAZV-Server nicht erreichbar. Zeige Beispieldaten - bitte ICS-Datei manuell hochladen für genaue Termine.',
-  };
-}
