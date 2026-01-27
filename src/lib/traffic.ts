@@ -1,25 +1,31 @@
 // Verkehrslage für Zernsdorf und Umgebung
 // Verwendet Google Routes API für Echtzeit-Verkehrsdaten
 
-// Koordinaten für relevante Routen
+// Koordinaten für relevante Routen von Zernsdorf aus
 const ROUTES = [
   {
-    id: 'l30_kw',
-    name: 'L30 → Königs Wusterhausen',
+    id: 'kw_bahnhof',
+    name: '→ Bahnhof KW',
     origin: { lat: 52.2847, lng: 13.6083 }, // Zernsdorf Zentrum
     destination: { lat: 52.2967, lng: 13.6336 }, // KW Bahnhof
   },
   {
-    id: 'l30_kablow',
-    name: 'L30 → Kablow',
-    origin: { lat: 52.2847, lng: 13.6083 }, // Zernsdorf Zentrum
-    destination: { lat: 52.2650, lng: 13.5850 }, // Kablow
+    id: 'schoenefeld',
+    name: '→ Schönefelder Kreuz',
+    origin: { lat: 52.2847, lng: 13.6083 }, // Zernsdorf
+    destination: { lat: 52.3883, lng: 13.5186 }, // Schönefelder Kreuz (A10/A113)
   },
   {
-    id: 'a10',
-    name: 'A10 (Schönefelder Kreuz)',
-    origin: { lat: 52.2967, lng: 13.6336 }, // KW
-    destination: { lat: 52.3400, lng: 13.5200 }, // Schönefelder Kreuz
+    id: 'frankfurt_oder',
+    name: '→ Frankfurt (Oder)',
+    origin: { lat: 52.2847, lng: 13.6083 }, // Zernsdorf
+    destination: { lat: 52.3471, lng: 14.5506 }, // Frankfurt (Oder)
+  },
+  {
+    id: 'cottbus',
+    name: '→ Cottbus',
+    origin: { lat: 52.2847, lng: 13.6083 }, // Zernsdorf
+    destination: { lat: 51.7606, lng: 14.3349 }, // Cottbus
   },
 ];
 
@@ -159,8 +165,8 @@ function simulateTrafficData(): TrafficSegment[] {
 
   const segments: TrafficSegment[] = [
     {
-      id: 'l30_kw',
-      name: 'L30 → Königs Wusterhausen',
+      id: 'kw_bahnhof',
+      name: '→ Bahnhof KW',
       freeFlowSpeed: 50,
       speed: Math.round(50 * congestionFactor),
       level: 'frei',
@@ -170,26 +176,37 @@ function simulateTrafficData(): TrafficSegment[] {
       durationInTraffic: Math.round(300 / congestionFactor),
     },
     {
-      id: 'l30_kablow',
-      name: 'L30 → Kablow',
-      freeFlowSpeed: 50,
-      speed: Math.round(50 * (congestionFactor + 0.1)),
+      id: 'schoenefeld',
+      name: '→ Schönefelder Kreuz',
+      freeFlowSpeed: 100,
+      speed: Math.round(100 * (congestionFactor - 0.05)),
       level: 'frei',
       delay: 0,
-      distance: 3.1,
-      duration: 220,
-      durationInTraffic: Math.round(220 / (congestionFactor + 0.1)),
+      distance: 18.0,
+      duration: 720,
+      durationInTraffic: Math.round(720 / (congestionFactor - 0.05)),
     },
     {
-      id: 'a10',
-      name: 'A10 (Schönefelder Kreuz)',
-      freeFlowSpeed: 120,
-      speed: Math.round(120 * (congestionFactor - 0.1)),
+      id: 'frankfurt_oder',
+      name: '→ Frankfurt (Oder)',
+      freeFlowSpeed: 110,
+      speed: Math.round(110 * congestionFactor),
       level: 'frei',
       delay: 0,
-      distance: 15.0,
-      duration: 450,
-      durationInTraffic: Math.round(450 / (congestionFactor - 0.1)),
+      distance: 85.0,
+      duration: 2800,
+      durationInTraffic: Math.round(2800 / congestionFactor),
+    },
+    {
+      id: 'cottbus',
+      name: '→ Cottbus',
+      freeFlowSpeed: 100,
+      speed: Math.round(100 * (congestionFactor - 0.1)),
+      level: 'frei',
+      delay: 0,
+      distance: 95.0,
+      duration: 3400,
+      durationInTraffic: Math.round(3400 / (congestionFactor - 0.1)),
     },
   ];
 
