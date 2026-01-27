@@ -50,7 +50,8 @@
       "Bash(ssh root@76.13.7.34 \"cd /home/clp/htdocs/app/zernsdorf && npm run build\")",
       "Bash(ssh root@76.13.7.34 \"cd /home/clp/htdocs/app/zernsdorf && npm run build 2>&1 | tail -30\")",
       "Bash(ssh root@76.13.7.34:*)",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "Bash(wmic process:*)"
     ]
   }
 }

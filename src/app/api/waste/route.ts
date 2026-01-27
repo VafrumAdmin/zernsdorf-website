@@ -139,7 +139,7 @@ async function fetchIcsData(icsUrl: string): Promise<{
     success: false,
     collections: [],
     source: 'fallback',
-    error: 'SBAZV-Server nicht erreichbar. Bitte kontaktiere Hostinger-Support um ausgehende Verbindungen zu 212.91.241.6:443 freizuschalten, oder lade eine ICS-Datei manuell hoch.',
+    error: 'SBAZV-Server vorübergehend nicht erreichbar. Bitte versuche es später erneut.',
   };
 }
 
