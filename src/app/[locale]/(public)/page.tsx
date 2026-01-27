@@ -100,64 +100,7 @@ interface MenuItem {
   is_active: boolean;
 }
 
-// Fallback-Daten für das Verzeichnis (werden verwendet wenn keine DB konfiguriert)
-const fallbackDirectory: DirectoryItem[] = [
-  // === ZERNSDORF - GASTRONOMIE ===
-  { name: 'Zum Bayern', type: 'Gastronomie', desc: 'Deutsche Küche, Schnitzel, Biergarten', address: 'Friedensaue 17a', open: 'Di-So', location: 'Zernsdorf', tel: '03375 498819' },
-  { name: 'Ristorante & Café Bel Sapore', type: 'Gastronomie', desc: 'Italienische Küche, Pizza, Pasta', address: 'Friedensaue 11', open: 'Di-So', location: 'Zernsdorf', tel: '03375 585 6034' },
-  { name: 'Aurora Fischerei', type: 'Gastronomie', desc: 'Frischer Fisch, Räucherfisch', address: 'Karl-Marx-Straße 28', open: 'Nach Saison', location: 'Zernsdorf' },
-
-  // === ZERNSDORF - VEREINE ===
-  { name: 'SV Zernsdorf e.V.', type: 'Vereine', desc: 'Fußball, Frauen- & Jugendmannschaften', address: 'Schillingstraße 49', open: 'Training lt. Plan', location: 'Zernsdorf', tel: '03375 52 66 45' },
-  { name: 'ESV Lok Zernsdorf e.V.', type: 'Vereine', desc: 'Eisenbahner-Sportverein', address: 'Senziger Weg 17', open: 'Lt. Vereinsplan', location: 'Zernsdorf' },
-  { name: 'Judoteam Lok Zernsdorf 1967 e.V.', type: 'Vereine', desc: 'Judo für alle Altersklassen', address: 'Seestraße 6', open: 'Lt. Trainingsplan', location: 'Zernsdorf', tel: '0172 639 90 40' },
-  { name: 'Heimatverein Zernsdorf e.V.', type: 'Vereine', desc: 'Ortschronik & Brauchtumspflege', address: 'Friedrich-Engels-Str.', open: 'Nach Vereinbarung', location: 'Zernsdorf', tel: '03375 29 22 75' },
-  { name: 'Freiwillige Feuerwehr Zernsdorf', type: 'Vereine', desc: 'Brandschutz, Jugendfeuerwehr (36 Kinder)', address: 'Karl-Marx-Straße 28', open: 'Nach Dienstplan', location: 'Zernsdorf' },
-  { name: 'Männerchor Freie Sänger Zernsdorf', type: 'Vereine', desc: 'Chorgesang, Auftritte', address: 'Clubhaus Askania Kablow', open: 'Di 19-21 Uhr Probe', location: 'Zernsdorf' },
-  { name: 'KultiZ e.V.', type: 'Vereine', desc: 'Kultur und Begegnungen in Zernsdorf', address: 'Friedrich-Engels-Str. 25', open: 'Lt. Veranstaltungen', location: 'Zernsdorf', tel: '03375 52 68 52' },
-  { name: 'DAFV Ortsgruppe Zernsdorf', type: 'Vereine', desc: 'Anglerverein', address: 'Zernsdorf', open: 'Nach Vereinbarung', location: 'Zernsdorf', tel: '03375 29 20 04' },
-  { name: 'Förderverein Grundschule Zernsdorf', type: 'Vereine', desc: 'Unterstützung der Grundschule', address: 'Alte Trift 3', open: 'Nach Vereinbarung', location: 'Zernsdorf', tel: '03375 29 30 53' },
-  { name: 'Wasserwanderfreunde Zernsdorf', type: 'Vereine', desc: 'Wassersport & Wandern', address: 'Karl-Marx-Straße 18', open: 'Lt. Vereinsplan', location: 'Zernsdorf' },
-
-  // === ZERNSDORF - GESUNDHEIT ===
-  { name: 'Praxis Anja-Kristin Helbig', type: 'Gesundheit', desc: 'Allgemeinmedizin', address: 'Zum Bahnhof 4', open: 'Mo-Fr nach Termin', location: 'Zernsdorf' },
-  { name: 'Praxis Ludwig & Dr. Hünig', type: 'Gesundheit', desc: 'Allgemeinmedizin', address: 'Undinestraße 32', open: 'Mo-Fr nach Termin', location: 'Zernsdorf' },
-  { name: 'Zahnarztpraxis Else & Wildenhain', type: 'Gesundheit', desc: 'Zahnheilkunde', address: 'Zum Langen Berg 1c', open: 'Mo-Fr nach Termin', location: 'Zernsdorf' },
-  { name: 'Zahnarztpraxis Dr. Kuhl', type: 'Gesundheit', desc: 'Zahnheilkunde', address: 'Undinestraße 36', open: 'Mo-Fr nach Termin', location: 'Zernsdorf' },
-
-  // === ZERNSDORF - GEWERBE & EINKAUFEN ===
-  { name: 'Aldi Nord', type: 'Gewerbe', desc: 'Discounter', address: 'Karl-Marx-Straße 92', open: 'Mo-Sa 8:00-20:00', location: 'Zernsdorf' },
-  { name: 'Netto Marken-Discount', type: 'Gewerbe', desc: 'Discounter', address: 'Karl-Marx-Straße', open: 'Mo-Sa 7:00-21:00', location: 'Zernsdorf' },
-  { name: 'Dahlback Bäckerei', type: 'Gewerbe', desc: 'Brot, Brötchen, Kuchen', address: 'Karl-Marx-Straße 6-8', open: 'Mo-Sa', location: 'Zernsdorf' },
-  { name: 'Schindlers Kiosk & Postfiliale', type: 'Gewerbe', desc: 'Zeitschriften, Tabak, Postdienste', address: 'Friedensaue 8', open: 'Mo-Sa', location: 'Zernsdorf' },
-  { name: 'Getränkemarkt Rössler', type: 'Gewerbe', desc: 'Getränke aller Art', address: 'Hinterkietz', open: 'Mo-Sa', location: 'Zernsdorf' },
-  { name: 'Fleischer', type: 'Gewerbe', desc: 'Fleisch & Wurstwaren', address: 'Friedensaue 9', open: 'Mo-Sa', location: 'Zernsdorf' },
-  { name: 'NKD', type: 'Gewerbe', desc: 'Textil-Discounter', address: 'Iris-Hahs-Hoffstetter-Str. 1', open: 'Mo-Sa', location: 'Zernsdorf' },
-
-  // === ZERNSDORF - HANDWERK ===
-  { name: 'Hairfactory am See', type: 'Handwerk', desc: 'Friseurmeisterin, seit 2019', address: 'Zernsdorf', open: 'Nach Termin', location: 'Zernsdorf' },
-
-  // === ZERNSDORF - FREIZEIT & BILDUNG ===
-  { name: 'Jugendfreizeitzentrum Zernsdorf', type: 'Freizeit', desc: 'Jugendclub, Freizeitangebote', address: 'Alte Trift 3', open: 'Lt. Öffnungszeiten', location: 'Zernsdorf', tel: '03375 21 12 14' },
-  { name: 'Bürgerhaus Zernsdorf', type: 'Freizeit', desc: 'Veranstaltungen, Versammlungen', address: 'Friedrich-Engels-Str. 35-41', open: 'Lt. Veranstaltungen', location: 'Zernsdorf', tel: '03375 52 37 63' },
-  { name: 'Der Bücherturm', type: 'Freizeit', desc: 'Bibliothek im Bürgerhaus', address: 'Friedrich-Engels-Str. 35-41', open: 'Lt. Öffnungszeiten', location: 'Zernsdorf' },
-  { name: 'Grundschule Zernsdorf', type: 'Freizeit', desc: 'Grundschule', address: 'Alte Trift 3', open: 'Schulzeiten', location: 'Zernsdorf' },
-  { name: 'Kita Zernsdorfer Rübchen', type: 'Freizeit', desc: 'Kindertagesstätte', address: 'Alte Trift 3b', open: 'Mo-Fr', location: 'Zernsdorf' },
-  { name: 'Kita Schatzkiste', type: 'Freizeit', desc: 'Kindertagesstätte', address: 'Undinestraße 34', open: 'Mo-Fr', location: 'Zernsdorf' },
-
-  // === KÖNIGS WUSTERHAUSEN ===
-  { name: 'Mr. Burns Restaurant & Steakhouse', type: 'Gastronomie', desc: 'Steaks, BBQ, American', address: 'Storkower Straße 36, KW', open: 'Di-So', location: 'Königs Wusterhausen' },
-  { name: 'Weinladen Am Kanal', type: 'Gastronomie', desc: 'Bistro, Weine, Mediterran', address: 'Bahnhofstraße 24, KW', open: 'Di-Sa', location: 'Königs Wusterhausen' },
-  { name: 'Sender KW Museum', type: 'Freizeit', desc: 'Rundfunkgeschichte erleben', address: 'Funkerberg, KW', open: 'Do-So 10:00-17:00', location: 'Königs Wusterhausen' },
-  { name: 'Schloss Königs Wusterhausen', type: 'Freizeit', desc: 'Museum, Führungen', address: 'Schlossplatz, KW', open: 'Di-So 10:00-17:00', location: 'Königs Wusterhausen' },
-  { name: 'A10 Center Wildau', type: 'Gewerbe', desc: 'Einkaufszentrum mit 100+ Shops', address: 'Chausseestraße 1, Wildau', open: 'Mo-Sa 10:00-20:00', location: 'Königs Wusterhausen' },
-];
-
-const fallbackEvents: EventItem[] = [
-  { date: '15. Aug', title: 'Zernsdorfer Sommerfest', loc: 'Bürgerhaus', time: '14:00' },
-  { date: '22. Aug', title: 'Feuerwehr Tag der offenen Tür', loc: 'Feuerwache', time: '10:00' },
-  { date: '01. Sep', title: 'Angler-Wettbewerb', loc: 'Krüpelsee Nord', time: '06:00' },
-];
+// Keine Fallback-Daten mehr - nur aus Datenbank laden
 
 // Category mapping for DB to display
 const categoryTypeMap: Record<string, string> = {
@@ -221,13 +164,13 @@ export default function HomePage() {
   const [trafficStatus, setTrafficStatus] = useState<TrafficStatusLocation[]>([]);
   const [trafficStatusLoading, setTrafficStatusLoading] = useState(true);
 
-  // Directory from DB or fallback
-  const [directory, setDirectory] = useState<DirectoryItem[]>(fallbackDirectory);
+  // Directory from DB
+  const [directory, setDirectory] = useState<DirectoryItem[]>([]);
   const [directoryLoading, setDirectoryLoading] = useState(true);
   const [directorySource, setDirectorySource] = useState<'database' | 'fallback'>('fallback');
 
-  // Events from DB or fallback
-  const [events, setEvents] = useState<EventItem[]>(fallbackEvents);
+  // Events from DB
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
 
   // Menu items from DB (for visibility control)
@@ -268,13 +211,12 @@ export default function HomePage() {
         setDirectory(transformed);
         setDirectorySource('database');
       } else {
-        // Fallback to hardcoded data
-        setDirectory(fallbackDirectory);
+        setDirectory([]);
         setDirectorySource('fallback');
       }
     } catch (error) {
       console.error('Directory fetch error:', error);
-      setDirectory(fallbackDirectory);
+      setDirectory([]);
       setDirectorySource('fallback');
     } finally {
       setDirectoryLoading(false);
@@ -309,11 +251,11 @@ export default function HomePage() {
         });
         setEvents(transformed);
       } else {
-        setEvents(fallbackEvents);
+        setEvents([]);
       }
     } catch (error) {
       console.error('Events fetch error:', error);
-      setEvents(fallbackEvents);
+      setEvents([]);
     } finally {
       setEventsLoading(false);
     }

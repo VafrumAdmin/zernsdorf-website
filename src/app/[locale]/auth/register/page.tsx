@@ -75,8 +75,6 @@ export default function RegisterPage() {
     try {
       await signUp(formData.email, formData.password, {
         username: formData.username,
-        first_name: formData.firstName || null,
-        last_name: formData.lastName || null,
       });
 
       setSuccess('Registrierung erfolgreich! Bitte prüfen Sie Ihr E-Mail-Postfach und bestätigen Sie Ihre E-Mail-Adresse.');

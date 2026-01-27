@@ -49,17 +49,40 @@ export async function GET(request: NextRequest) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    // Sortierung und Pagination
+    // Sortierung und Pagination (sort_order kann fehlen)
     query = query
-      .order('sort_order', { ascending: true })
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
+    let { data, error, count } = await query;
 
     if (error) {
       console.error('Error fetching businesses:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // Fallback: Direkt aus businesses Tabelle
+      const fallbackQuery = supabase
+        .from('businesses')
+        .select('*, business_categories(name, display_name, icon, color)', { count: 'exact' })
+        .order('name', { ascending: true })
+        .range(offset, offset + limit - 1);
+
+      if (!showInactive) {
+        fallbackQuery.eq('is_active', true);
+      }
+
+      const { data: fallbackData, error: fallbackError, count: fallbackCount } = await fallbackQuery;
+      if (fallbackError) {
+        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+      }
+
+      // Transform
+      data = (fallbackData || []).map((b: Record<string, unknown>) => ({
+        ...b,
+        category_name: (b.business_categories as Record<string, unknown>)?.name || null,
+        category_display_name: (b.business_categories as Record<string, unknown>)?.display_name || null,
+        category_icon: (b.business_categories as Record<string, unknown>)?.icon || null,
+        category_color: (b.business_categories as Record<string, unknown>)?.color || null,
+      }));
+      count = fallbackCount;
     }
 
     return NextResponse.json({

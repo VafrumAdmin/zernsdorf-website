@@ -23,22 +23,33 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   try {
-    // Locations abrufen
+    // Locations abrufen (sort_order kann fehlen)
     let locationsQuery = supabase
       .from('traffic_locations')
       .select('*')
       .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .order('name', { ascending: true });
 
     if (dashboardOnly) {
       locationsQuery = locationsQuery.eq('show_on_dashboard', true);
     }
 
-    const { data: locations, error: locationsError } = await locationsQuery;
+    let { data: locations, error: locationsError } = await locationsQuery;
 
     if (locationsError) {
       console.error('Error fetching locations:', locationsError);
-      return NextResponse.json({ error: locationsError.message }, { status: 500 });
+      // Fallback ohne show_on_dashboard Filter
+      const fallbackQuery = supabase
+        .from('traffic_locations')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+      if (fallbackError) {
+        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+      }
+      locations = fallbackData;
     }
 
     // Aktuellen Status für jede Location abrufen

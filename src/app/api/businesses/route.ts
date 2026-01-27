@@ -24,10 +24,11 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   try {
+    // Erst versuchen mit sort_order, bei Fehler ohne
     let query = supabase
       .from('businesses_with_category')
       .select('*', { count: 'exact' })
-      .eq('is_active', true); // Nur aktive Einträge
+      .eq('is_active', true);
 
     // Filter anwenden
     if (category) {
@@ -40,10 +41,8 @@ export async function GET(request: NextRequest) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    // Sortierung: Featured zuerst, dann nach sort_order, dann alphabetisch
+    // Sortierung: alphabetisch (sort_order kann fehlen wenn Schema nicht aktuell)
     query = query
-      .order('is_featured', { ascending: false })
-      .order('sort_order', { ascending: true })
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
 
@@ -51,7 +50,34 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching businesses:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // Fallback: Direkt aus businesses Tabelle
+      const fallbackQuery = supabase
+        .from('businesses')
+        .select('*, business_categories(name, display_name, icon, color)', { count: 'exact' })
+        .eq('is_active', true)
+        .order('name', { ascending: true })
+        .range(offset, offset + limit - 1);
+
+      const { data: fallbackData, error: fallbackError, count: fallbackCount } = await fallbackQuery;
+
+      if (fallbackError) {
+        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+      }
+
+      // Transform to match expected format
+      const transformed = (fallbackData || []).map((b: Record<string, unknown>) => ({
+        ...b,
+        category_name: (b.business_categories as Record<string, unknown>)?.name || null,
+        category_display_name: (b.business_categories as Record<string, unknown>)?.display_name || null,
+        category_icon: (b.business_categories as Record<string, unknown>)?.icon || null,
+        category_color: (b.business_categories as Record<string, unknown>)?.color || null,
+      }));
+
+      return NextResponse.json({
+        businesses: transformed,
+        total: fallbackCount || 0,
+        source: 'database'
+      });
     }
 
     return NextResponse.json({
