@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { logoutUser } from '@/lib/auth/jwt';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST() {
   try {
-    await logoutUser();
+    const supabase = await createClient();
+    await supabase.auth.signOut();
     return NextResponse.json({ message: 'Erfolgreich abgemeldet' });
   } catch (error) {
     console.error('Logout API error:', error);

@@ -543,30 +543,16 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Traffic Status Lights from Admin */}
+                  {/* Traffic Data from Google Routes API */}
                   <div className="flex-1 flex flex-col">
-                    {!trafficStatusLoading && trafficStatus.length > 0 ? (
-                      <div className="space-y-2">
-                        {trafficStatus.slice(0, 3).map((loc) => {
-                          const style = getTrafficStyle(loc.status_level || loc.status);
-                          return (
-                            <div key={loc.id} className="flex justify-between items-center">
-                              <span className="text-sm truncate mr-2">{loc.name_short || loc.name}</span>
-                              <span className={`px-2 py-0.5 ${style.bg} ${style.text} rounded text-xs font-bold border ${style.border} whitespace-nowrap`}>
-                                {style.label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : trafficLoading ? (
+                    {trafficLoading ? (
                       <div className="animate-pulse space-y-2">
                         <div className="h-6 bg-white/20 rounded w-full"></div>
                         <div className="h-6 bg-white/10 rounded w-full"></div>
                       </div>
                     ) : traffic.length > 0 ? (
-                      <div className="space-y-2">
-                        {traffic.slice(0, 3).map((segment) => {
+                      <div className="space-y-1.5">
+                        {traffic.slice(0, 4).map((segment) => {
                           const style = getTrafficStyle(segment.level);
                           return (
                             <div key={segment.id} className="flex justify-between items-center">
@@ -584,9 +570,10 @@ export default function HomePage() {
                           <AlertCircle size={16} /> Keine Live-Daten
                         </div>
                         <div className={`text-xs ${t.accent} space-y-1`}>
-                          <div>→ Richtung Königs Wusterhausen</div>
-                          <div>→ Richtung Kablow / A13</div>
-                          <div>→ Autobahn A10</div>
+                          <div>→ Bahnhof KW</div>
+                          <div>→ Schönefelder Kreuz</div>
+                          <div>→ Frankfurt (Oder)</div>
+                          <div>→ Cottbus</div>
                         </div>
                       </div>
                     )}

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import {
   User,
-  Mail,
   Phone,
   MapPin,
   Briefcase,
@@ -14,8 +13,24 @@ import {
   ArrowLeft,
   Camera,
   Check,
+  Bus,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+
+// Alle Bushaltestellen in Zernsdorf (von VBB API)
+const BUS_STOPS = [
+  { id: '900261033', name: 'Zernsdorf, An der Lanke' },
+  { id: '900260011', name: 'Zernsdorf, Bahnhof' },
+  { id: '900261034', name: 'Zernsdorf, Bahnübergang' },
+  { id: '900261035', name: 'Zernsdorf, Dorfaue' },
+  { id: '900261039', name: 'Zernsdorf, Friedrich-Engels-Str.' },
+  { id: '900261036', name: 'Zernsdorf, Nordstr.' },
+  { id: '900261052', name: 'Zernsdorf, Rütgersstr.' },
+  { id: '900261038', name: 'Zernsdorf, Seekorso' },
+  { id: '900261037', name: 'Zernsdorf, Strandweg' },
+  { id: '900261041', name: 'Zernsdorf, Wustroweg' },
+  { id: '900261040', name: 'Zernsdorf, Zeltplatz' },
+];
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -37,6 +52,7 @@ export default function ProfilePage() {
     work_postal_code: '',
     work_city: '',
     work_arrival_time: '',
+    favorite_bus_stop: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -62,6 +78,7 @@ export default function ProfilePage() {
         work_postal_code: profile.work_postal_code || '',
         work_city: profile.work_city || '',
         work_arrival_time: profile.work_arrival_time || '',
+        favorite_bus_stop: profile.favorite_bus_stops?.[0] || '',
       });
     }
   }, [profile]);
@@ -81,7 +98,19 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
-      await updateProfile(formData);
+      // Prepare data for database
+      const { favorite_bus_stop, ...restFormData } = formData;
+
+      // Convert empty strings to null for database fields that expect specific types
+      const profileData: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(restFormData)) {
+        profileData[key] = value === '' ? null : value;
+      }
+
+      // Add favorite_bus_stops as array
+      profileData.favorite_bus_stops = favorite_bus_stop ? [favorite_bus_stop] : [];
+
+      await updateProfile(profileData);
       setSuccess('Profil wurde erfolgreich aktualisiert');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: unknown) {
@@ -340,6 +369,34 @@ export default function ProfilePage() {
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Nächste Bushaltestelle */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Bus className="w-5 h-5 text-slate-400" />
+              Nächste Bushaltestelle
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              Wählen Sie Ihre nächste Haltestelle für personalisierte Busfahrplan-Informationen.
+            </p>
+
+            <div>
+              <select
+                id="favorite_bus_stop"
+                name="favorite_bus_stop"
+                value={formData.favorite_bus_stop}
+                onChange={(e) => setFormData(prev => ({ ...prev, favorite_bus_stop: e.target.value }))}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="">-- Bitte wählen --</option>
+                {BUS_STOPS.map((stop) => (
+                  <option key={stop.id} value={stop.id}>
+                    {stop.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser } from '@/lib/auth/jwt';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,14 +12,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await loginUser(email, password);
+    const supabase = await createClient();
 
-    if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: 401 });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('Supabase login error:', error);
+      return NextResponse.json({ error: 'Ungültige E-Mail oder Passwort' }, { status: 401 });
     }
 
     return NextResponse.json({
-      user: result.user,
+      user: data.user,
       message: 'Erfolgreich angemeldet',
     });
   } catch (error) {

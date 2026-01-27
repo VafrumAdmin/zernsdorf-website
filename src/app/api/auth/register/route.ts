@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerUser } from '@/lib/auth/jwt';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,15 +19,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await registerUser(email, password, username);
+    const supabase = await createClient();
 
-    if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username: username || email.split('@')[0],
+        },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://zernsdorf.de'}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      console.error('Supabase auth error:', error);
+      if (error.message.includes('already registered')) {
+        return NextResponse.json({ error: 'Diese E-Mail-Adresse ist bereits registriert' }, { status: 400 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({
-      user: result.user,
-      message: 'Erfolgreich registriert',
+      user: data.user,
+      message: 'Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse.',
     });
   } catch (error) {
     console.error('Register API error:', error);
