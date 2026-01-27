@@ -119,15 +119,42 @@ async function fetchIcsData(icsUrl: string): Promise<{
   address?: string;
   error?: string;
 }> {
+  // Versuche mehrere Methoden
+  const methods = [
+    () => fetchDirectly(icsUrl),
+    () => fetchViaProxy(icsUrl),
+  ];
+
+  for (const method of methods) {
+    const result = await method();
+    if (result.success) {
+      return result;
+    }
+    console.log('[SBAZV] Method failed, trying next...');
+  }
+
+  // Alle Methoden fehlgeschlagen - generiere Fallback-Daten
+  console.log('[SBAZV] All methods failed, using fallback data');
+  return generateFallbackData();
+}
+
+// Direkter Abruf
+async function fetchDirectly(icsUrl: string): Promise<{
+  success: boolean;
+  collections: any[];
+  source: 'sbazv' | 'fallback';
+  address?: string;
+  error?: string;
+}> {
   try {
-    console.log('[SBAZV] Fetching ICS from:', icsUrl.substring(0, 80) + '...');
+    console.log('[SBAZV] Fetching ICS directly from:', icsUrl.substring(0, 80) + '...');
 
     const response = await fetch(icsUrl, {
       headers: {
         Accept: 'text/calendar, application/ics, */*',
         'User-Agent': 'Zernsdorf-Portal/1.0 (Waste Calendar Sync)',
       },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -135,41 +162,159 @@ async function fetchIcsData(icsUrl: string): Promise<{
     }
 
     const icsContent = await response.text();
-
-    if (!icsContent.includes('BEGIN:VCALENDAR')) {
-      throw new Error('Keine gültige ICS-Datei erhalten');
-    }
-
-    const events = parseICS(icsContent);
-
-    // Extrahiere Adresse aus den Events (LOCATION-Feld)
-    let address: string | undefined;
-    const firstEventWithLocation = events.find(e => e.location);
-    if (firstEventWithLocation?.location) {
-      // Format: "Straße Nr, PLZ Ort" - extrahiere Straße und Hausnummer
-      const locationMatch = firstEventWithLocation.location.match(/^([^,]+)/);
-      if (locationMatch) {
-        address = locationMatch[1].trim();
-      }
-    }
-
-    const collections = icsEventsToWasteCollections(events, address || '');
-
-    console.log('[SBAZV] Loaded', collections.length, 'collections for', address || 'unknown address');
-
-    return {
-      success: true,
-      collections,
-      source: 'sbazv',
-      address,
-    };
+    return processIcsContent(icsContent);
   } catch (error) {
-    console.error('[SBAZV] Error:', error);
+    console.error('[SBAZV] Direct fetch error:', error);
     return {
       success: false,
       collections: [],
       source: 'fallback',
-      error: error instanceof Error ? error.message : 'Fehler beim Abrufen der Daten',
+      error: error instanceof Error ? error.message : 'Direkter Abruf fehlgeschlagen',
     };
   }
+}
+
+// Abruf über Proxy-Service
+async function fetchViaProxy(icsUrl: string): Promise<{
+  success: boolean;
+  collections: any[];
+  source: 'sbazv' | 'fallback';
+  address?: string;
+  error?: string;
+}> {
+  try {
+    // Verwende allorigins.win als Proxy
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(icsUrl)}`;
+    console.log('[SBAZV] Fetching via proxy...');
+
+    const response = await fetch(proxyUrl, {
+      headers: {
+        Accept: 'text/calendar, application/ics, text/plain, */*',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Proxy returned ${response.status}: ${response.statusText}`);
+    }
+
+    const icsContent = await response.text();
+    return processIcsContent(icsContent);
+  } catch (error) {
+    console.error('[SBAZV] Proxy fetch error:', error);
+    return {
+      success: false,
+      collections: [],
+      source: 'fallback',
+      error: error instanceof Error ? error.message : 'Proxy-Abruf fehlgeschlagen',
+    };
+  }
+}
+
+// ICS-Inhalt verarbeiten
+function processIcsContent(icsContent: string): {
+  success: boolean;
+  collections: any[];
+  source: 'sbazv' | 'fallback';
+  address?: string;
+  error?: string;
+} {
+  if (!icsContent.includes('BEGIN:VCALENDAR')) {
+    return {
+      success: false,
+      collections: [],
+      source: 'fallback',
+      error: 'Keine gültige ICS-Datei erhalten',
+    };
+  }
+
+  const events = parseICS(icsContent);
+
+  // Extrahiere Adresse aus den Events (LOCATION-Feld)
+  let address: string | undefined;
+  const firstEventWithLocation = events.find(e => e.location);
+  if (firstEventWithLocation?.location) {
+    const locationMatch = firstEventWithLocation.location.match(/^([^,]+)/);
+    if (locationMatch) {
+      address = locationMatch[1].trim();
+    }
+  }
+
+  const collections = icsEventsToWasteCollections(events, address || '');
+
+  console.log('[SBAZV] Loaded', collections.length, 'collections for', address || 'unknown address');
+
+  return {
+    success: true,
+    collections,
+    source: 'sbazv',
+    address,
+  };
+}
+
+// Fallback-Daten generieren wenn SBAZV nicht erreichbar
+function generateFallbackData(): {
+  success: boolean;
+  collections: any[];
+  source: 'sbazv' | 'fallback';
+  address?: string;
+  error?: string;
+} {
+  const collections: any[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const getNextWeekday = (start: Date, targetDay: number): Date => {
+    const result = new Date(start);
+    const currentDay = result.getDay();
+    let daysToAdd = targetDay - currentDay;
+    if (daysToAdd <= 0) daysToAdd += 7;
+    result.setDate(result.getDate() + daysToAdd);
+    return result;
+  };
+
+  // Restmüll: 14-tägig am Dienstag
+  let restmuellDate = getNextWeekday(today, 2);
+  for (let i = 0; i < 12; i++) {
+    collections.push({
+      id: `fallback-restmuell-${i}`,
+      date: new Date(restmuellDate).toISOString(),
+      type: 'restmuell',
+      street: 'Zernsdorf',
+    });
+    restmuellDate.setDate(restmuellDate.getDate() + 14);
+  }
+
+  // Papier: 4-wöchig am Mittwoch
+  let papierDate = getNextWeekday(today, 3);
+  papierDate.setDate(papierDate.getDate() + 7);
+  for (let i = 0; i < 6; i++) {
+    collections.push({
+      id: `fallback-papier-${i}`,
+      date: new Date(papierDate).toISOString(),
+      type: 'papier',
+      street: 'Zernsdorf',
+    });
+    papierDate.setDate(papierDate.getDate() + 28);
+  }
+
+  // Gelber Sack: 14-tägig am Donnerstag
+  let gelbDate = getNextWeekday(today, 4);
+  for (let i = 0; i < 12; i++) {
+    collections.push({
+      id: `fallback-gelbesack-${i}`,
+      date: new Date(gelbDate).toISOString(),
+      type: 'gelbesack',
+      street: 'Zernsdorf',
+    });
+    gelbDate.setDate(gelbDate.getDate() + 14);
+  }
+
+  return {
+    success: true,
+    collections: collections.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    source: 'fallback',
+    address: 'Zernsdorf (Beispieldaten)',
+    error: 'SBAZV-Server nicht erreichbar. Zeige Beispieldaten - bitte ICS-Datei manuell hochladen für genaue Termine.',
+  };
 }

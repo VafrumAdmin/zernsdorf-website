@@ -17,12 +17,40 @@ export interface Profile {
   user_id: number;
   email: string;
   username?: string;
+  first_name?: string;
+  last_name?: string;
+  nickname?: string;
+  avatar_url?: string;
   bio?: string;
   phone?: string;
   street?: string;
+  house_number?: string;
+  postal_code?: string;
   city?: string;
+  work_street?: string;
+  work_house_number?: string;
+  work_postal_code?: string;
+  work_city?: string;
+  work_arrival_time?: string;
   preferred_language?: string;
   theme?: string;
+  email_notifications?: boolean;
+  push_notifications?: boolean;
+  store_data_locally?: boolean;
+  waste_street_id?: string;
+  waste_notifications?: boolean;
+  waste_notification_time?: string;
+  favorite_bus_stops?: string[];
+  commute_notifications?: boolean;
+  posts_count?: number;
+  comments_count?: number;
+  listings_count?: number;
+  reputation_points?: number;
+  is_verified?: boolean;
+  is_active?: boolean;
+  last_seen_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthState {
