@@ -35,6 +35,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 // Types
 interface WeatherData {
@@ -149,6 +150,7 @@ function getTrafficStyle(level: string) {
 
 export default function HomePage() {
   const { theme: t, currentTheme, setTheme, themes } = useTheme();
+  const { preferences, isLoaded: prefsLoaded } = useUserPreferences();
   const [activeCategory, setActiveCategory] = useState('Alle');
   const [showThemePicker, setShowThemePicker] = useState(false);
 
@@ -157,6 +159,7 @@ export default function HomePage() {
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [transitDepartures, setTransitDepartures] = useState<TransitDeparture[]>([]);
   const [transitLoading, setTransitLoading] = useState(true);
+  const [transitStopName, setTransitStopName] = useState<string>('Bahnhof');
   const [traffic, setTraffic] = useState<TrafficSegment[]>([]);
   const [trafficLoading, setTrafficLoading] = useState(true);
 
@@ -317,11 +320,18 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch Transit Data
+  // Fetch Transit Data - uses user's preferred stop if available
   useEffect(() => {
+    // Wait for preferences to load before fetching
+    if (!prefsLoaded) return;
+
+    const stopId = preferences.nearestStop?.id || 'bahnhof';
+    const stopName = preferences.nearestStop?.name || 'Bahnhof';
+    setTransitStopName(stopName.replace('Zernsdorf, ', ''));
+
     const fetchTransit = async () => {
       try {
-        const res = await fetch('/api/transit?stop=bahnhof&limit=3');
+        const res = await fetch(`/api/transit?stop=${stopId}&limit=3`);
         const data = await res.json();
         if (data.departures && data.departures.length > 0) {
           const transformed = data.departures.map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
@@ -332,9 +342,12 @@ export default function HomePage() {
             product: dep.product,
           }));
           setTransitDepartures(transformed);
+        } else {
+          setTransitDepartures([]);
         }
       } catch (error) {
         console.error('Transit fetch error:', error);
+        setTransitDepartures([]);
       } finally {
         setTransitLoading(false);
       }
@@ -342,7 +355,7 @@ export default function HomePage() {
     fetchTransit();
     const interval = setInterval(fetchTransit, 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [prefsLoaded, preferences.nearestStop]);
 
   // Fetch Traffic Data
   useEffect(() => {
@@ -467,7 +480,7 @@ export default function HomePage() {
             <Link href="/transport" className="block h-full">
               <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 text-white hover:bg-white/20 hover:scale-[1.02] transition-all cursor-pointer group h-full flex flex-col">
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`font-medium text-sm uppercase tracking-wider ${t.accent}`}>ÖPNV • Bahnhof</span>
+                  <span className={`font-medium text-sm uppercase tracking-wider ${t.accent}`}>ÖPNV • {transitStopName}</span>
                   <div className="flex items-center gap-2">
                     <Train className="text-red-300" />
                     <ArrowRight size={16} className="text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" />
@@ -517,10 +530,7 @@ export default function HomePage() {
                     </div>
                     <div className={`text-xs ${t.accent} space-y-1`}>
                       <div className="flex items-center gap-2">
-                        <Train size={12} className="text-red-300" /> RB36 Richtung Beeskow/KW
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Bus size={12} className="text-blue-300" /> 721, 723 nach KW
+                        <Bus size={12} className="text-blue-300" /> Abfahrten von {transitStopName}
                       </div>
                     </div>
                     <div className="mt-auto pt-3 border-t border-white/10 text-xs text-white/60 group-hover:text-white/80 transition">
