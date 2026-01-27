@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { useAuth } from './useAuth';
+import { ZERNSDORF_STOPS } from '@/lib/transit';
 
 // =====================================================
 // TYPES
@@ -106,7 +107,7 @@ const LOCAL_STORAGE_KEY = 'zernsdorf_user_preferences';
 const UserPreferencesContext = createContext<UserPreferencesContextType | null>(null);
 
 export function UserPreferencesProvider({ children }: { children: ReactNode }) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading } = useAuth();
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -130,14 +131,17 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true);
   }, []);
 
-  // Sync from database when user logs in
+  // Sync from auth profile when user logs in - this is the main source of truth
   useEffect(() => {
     if (authLoading || !isLoaded) return;
 
-    if (isLoggedIn && !preferences.storeDataLocally) {
-      syncFromDatabase();
+    if (isLoggedIn && profile) {
+      // Map profile data to preferences
+      const profilePrefs = mapProfileToPreferences(profile);
+      setPreferences(prev => ({ ...prev, ...profilePrefs }));
+      saveToLocalStorage({ ...preferences, ...profilePrefs });
     }
-  }, [isLoggedIn, authLoading, isLoaded]);
+  }, [isLoggedIn, authLoading, isLoaded, profile]);
 
   // Save to localStorage whenever preferences change
   const saveToLocalStorage = useCallback((prefs: UserPreferences) => {
@@ -215,10 +219,25 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     await updatePreferences({ address });
   }, [updatePreferences]);
 
-  // ÖPNV
+  // ÖPNV - also syncs to profile if logged in
   const setNearestStop = useCallback(async (stop: NearestStop | null) => {
     await updatePreferences({ nearestStop: stop });
-  }, [updatePreferences]);
+
+    // Also update profile database if logged in
+    if (isLoggedIn && stop) {
+      try {
+        await fetch('/api/user/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            favorite_bus_stops: [stop.vbbId],
+          }),
+        });
+      } catch (error) {
+        console.error('Error syncing stop to profile:', error);
+      }
+    }
+  }, [updatePreferences, isLoggedIn]);
 
   const addFavoriteStop = useCallback(async (stop: NearestStop) => {
     const exists = preferences.favoriteStops.some(s => s.id === stop.id);
@@ -323,6 +342,91 @@ export function useUserPreferences(): UserPreferencesContextType {
 // =====================================================
 // MAPPING HELPERS
 // =====================================================
+
+/**
+ * Maps the auth profile (from useAuth) to UserPreferences
+ * This is the main sync - profile is the source of truth for logged in users
+ */
+function mapProfileToPreferences(profile: Record<string, unknown>): Partial<UserPreferences> {
+  const prefs: Partial<UserPreferences> = {};
+
+  // Address from profile
+  if (profile.street) {
+    prefs.address = {
+      street: (profile.street as string) || '',
+      houseNumber: (profile.house_number as string) || '',
+      postalCode: (profile.postal_code as string) || '',
+      city: (profile.city as string) || 'Zernsdorf',
+    };
+  }
+
+  // Work address from profile
+  if (profile.work_street) {
+    prefs.workAddress = {
+      street: (profile.work_street as string) || '',
+      houseNumber: (profile.work_house_number as string) || '',
+      postalCode: (profile.work_postal_code as string) || '',
+      city: (profile.work_city as string) || '',
+    };
+  }
+
+  // Work arrival time
+  if (profile.work_arrival_time) {
+    prefs.workArrivalTime = profile.work_arrival_time as string;
+  }
+
+  // Favorite bus stops from profile - convert VBB IDs to NearestStop objects
+  const favStops = profile.favorite_bus_stops as string[] | undefined;
+  if (Array.isArray(favStops) && favStops.length > 0) {
+    // First favorite stop is the "nearest" stop
+    const firstStopVbbId = favStops[0];
+    const matchedStop = ZERNSDORF_STOPS.find(s => s.vbbId === firstStopVbbId);
+
+    if (matchedStop) {
+      prefs.nearestStop = {
+        id: matchedStop.id,
+        name: matchedStop.name,
+        vbbId: matchedStop.vbbId,
+      };
+    }
+
+    // All favorites
+    prefs.favoriteStops = favStops
+      .map(vbbId => {
+        const stop = ZERNSDORF_STOPS.find(s => s.vbbId === vbbId);
+        if (stop) {
+          return {
+            id: stop.id,
+            name: stop.name,
+            vbbId: stop.vbbId,
+          };
+        }
+        return null;
+      })
+      .filter((s): s is NearestStop => s !== null);
+  }
+
+  // Waste settings
+  if (profile.waste_street_id) {
+    prefs.wasteStreetId = profile.waste_street_id as string;
+  }
+  if (profile.waste_notifications !== undefined) {
+    prefs.wasteNotifications = Boolean(profile.waste_notifications);
+  }
+  if (profile.waste_notification_time) {
+    prefs.wasteNotificationTime = profile.waste_notification_time as string;
+  }
+
+  // Theme and language
+  if (profile.theme) {
+    prefs.theme = profile.theme as 'light' | 'dark' | 'system';
+  }
+  if (profile.preferred_language) {
+    prefs.language = profile.preferred_language as 'de' | 'en';
+  }
+
+  return prefs;
+}
 
 function mapDatabaseToPreferences(dbData: Record<string, unknown>): UserPreferences {
   return {
