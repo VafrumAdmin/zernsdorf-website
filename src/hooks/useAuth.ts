@@ -1,13 +1,32 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
-import type { Profile } from '@/types/database';
+import { useState, useEffect, useCallback } from 'react';
+
+export interface User {
+  id: number;
+  email: string;
+  username: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  roles?: string[];
+}
+
+export interface Profile {
+  id: number;
+  user_id: number;
+  email: string;
+  username?: string;
+  bio?: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+  preferred_language?: string;
+  theme?: string;
+}
 
 interface AuthState {
   user: User | null;
-  session: Session | null;
   profile: Profile | null;
   roles: string[];
   isLoading: boolean;
@@ -19,7 +38,6 @@ interface AuthState {
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
-    session: null,
     profile: null,
     roles: [],
     isLoading: true,
@@ -28,40 +46,16 @@ export function useAuth() {
     isModerator: false,
   });
 
-  const supabase = createClient();
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    const { data: userRoles } = await supabase
-      .from('user_roles')
-      .select('role:roles(name)')
-      .eq('user_id', userId);
-
-    const roles = userRoles?.map((ur: unknown) => {
-      const userRole = ur as { role: { name: string } | null };
-      return userRole.role?.name;
-    }).filter(Boolean) as string[] || [];
-
-    return { profile, roles };
-  }, [supabase]);
-
-  useEffect(() => {
-    // Initial session check
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        const { profile, roles } = await fetchProfile(session.user.id);
-
+      if (data.user) {
+        const roles = data.user.roles || [];
         setState({
-          user: session.user,
-          session,
-          profile,
+          user: data.user,
+          profile: data.profile || null,
           roles,
           isLoading: false,
           isAuthenticated: true,
@@ -69,140 +63,122 @@ export function useAuth() {
           isModerator: roles.includes('admin') || roles.includes('moderator'),
         });
       } else {
-        setState(prev => ({
-          ...prev,
+        setState({
+          user: null,
+          profile: null,
+          roles: [],
           isLoading: false,
-        }));
+          isAuthenticated: false,
+          isAdmin: false,
+          isModerator: false,
+        });
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+      }));
+    }
+  }, []);
 
-    initAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const { profile, roles } = await fetchProfile(session.user.id);
-
-          setState({
-            user: session.user,
-            session,
-            profile,
-            roles,
-            isLoading: false,
-            isAuthenticated: true,
-            isAdmin: roles.includes('admin'),
-            isModerator: roles.includes('admin') || roles.includes('moderator'),
-          });
-        } else if (event === 'SIGNED_OUT') {
-          setState({
-            user: null,
-            session: null,
-            profile: null,
-            roles: [],
-            isLoading: false,
-            isAuthenticated: false,
-            isAdmin: false,
-            isModerator: false,
-          });
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, fetchProfile]);
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (error) {
-      throw error;
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Anmeldung fehlgeschlagen');
     }
 
+    await fetchUser();
     return data;
   };
 
-  const signUp = async (email: string, password: string, metadata?: Record<string, unknown>) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metadata,
-      },
+  const signUp = async (email: string, password: string, metadata?: { username?: string }) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, username: metadata?.username }),
     });
 
-    if (error) {
-      throw error;
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Registrierung fehlgeschlagen');
     }
 
+    await fetchUser();
     return data;
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      throw error;
-    }
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setState({
+      user: null,
+      profile: null,
+      roles: [],
+      isLoading: false,
+      isAuthenticated: false,
+      isAdmin: false,
+      isModerator: false,
+    });
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
 
-    if (error) {
-      throw error;
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Fehler beim Zurücksetzen');
     }
   };
 
   const updatePassword = async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
+    const res = await fetch('/api/auth/update-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: newPassword }),
     });
 
-    if (error) {
-      throw error;
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Fehler beim Ändern des Passworts');
     }
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!state.user) {
-      throw new Error('Not authenticated');
+    const res = await fetch('/api/user/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Fehler beim Aktualisieren');
     }
 
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', state.user.id);
-
-    if (error) {
-      throw error;
-    }
-
-    // Refresh profile
-    const { profile, roles } = await fetchProfile(state.user.id);
-    setState(prev => ({
-      ...prev,
-      profile,
-      roles,
-    }));
+    await fetchUser();
   };
 
   const refreshProfile = async () => {
-    if (!state.user) return;
-
-    const { profile, roles } = await fetchProfile(state.user.id);
-    setState(prev => ({
-      ...prev,
-      profile,
-      roles,
-      isAdmin: roles.includes('admin'),
-      isModerator: roles.includes('admin') || roles.includes('moderator'),
-    }));
+    await fetchUser();
   };
 
   return {

@@ -43,7 +43,9 @@
       "Bash(grep:*)",
       "Bash(npx tsc:*)",
       "Bash(wmic process where \"name=''node.exe''\" delete)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
