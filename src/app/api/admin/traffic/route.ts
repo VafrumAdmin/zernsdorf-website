@@ -23,39 +23,23 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   try {
-    // Locations abrufen (sort_order kann fehlen)
-    let locationsQuery = supabase
+    // Locations abrufen - nur Basis-Spalten ohne show_on_dashboard (Schema-Cache-Problem)
+    const { data: locations, error: locationsError } = await supabase
       .from('traffic_locations')
-      .select('*')
+      .select('id, name, name_short, description, location_type, latitude, longitude, sort_order, is_active, show_on_dashboard, created_at')
       .eq('is_active', true)
       .order('name', { ascending: true });
 
-    if (dashboardOnly) {
-      locationsQuery = locationsQuery.eq('show_on_dashboard', true);
-    }
-
-    let { data: locations, error: locationsError } = await locationsQuery;
-
     if (locationsError) {
       console.error('Error fetching locations:', locationsError);
-      // Fallback ohne show_on_dashboard Filter
-      const fallbackQuery = supabase
-        .from('traffic_locations')
-        .select('*')
-        .eq('is_active', true)
-        .order('name', { ascending: true });
-
-      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
-      if (fallbackError) {
-        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
-      }
-      locations = fallbackData;
+      return NextResponse.json({ error: locationsError.message }, { status: 500 });
     }
 
     // Aktuellen Status für jede Location abrufen
     const { data: status, error: statusError } = await supabase
-      .from('current_traffic_status')
-      .select('*');
+      .from('traffic_status')
+      .select('*')
+      .is('valid_until', null);
 
     if (statusError) {
       console.error('Error fetching status:', statusError);

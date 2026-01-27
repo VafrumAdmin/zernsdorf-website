@@ -24,9 +24,18 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   try {
-    // Erst versuchen mit sort_order, bei Fehler ohne
+    // Erst Kategorien laden
+    const { data: categories } = await supabase
+      .from('business_categories')
+      .select('id, name, display_name, icon, color');
+
+    type Category = { id: string; name: string; display_name: string; icon: string; color: string };
+    const categoryMap = new Map<string, Category>();
+    (categories || []).forEach((c: Category) => categoryMap.set(c.id, c));
+
+    // Dann Businesses ohne JOIN (Schema-Cache-Probleme)
     let query = supabase
-      .from('businesses_with_category')
+      .from('businesses')
       .select('*', { count: 'exact' })
       .eq('is_active', true);
 
@@ -41,7 +50,7 @@ export async function GET(request: NextRequest) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    // Sortierung: alphabetisch (sort_order kann fehlen wenn Schema nicht aktuell)
+    // Sortierung
     query = query
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
@@ -50,38 +59,23 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching businesses:', error);
-      // Fallback: Direkt aus businesses Tabelle
-      const fallbackQuery = supabase
-        .from('businesses')
-        .select('*, business_categories(name, display_name, icon, color)', { count: 'exact' })
-        .eq('is_active', true)
-        .order('name', { ascending: true })
-        .range(offset, offset + limit - 1);
-
-      const { data: fallbackData, error: fallbackError, count: fallbackCount } = await fallbackQuery;
-
-      if (fallbackError) {
-        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
-      }
-
-      // Transform to match expected format
-      const transformed = (fallbackData || []).map((b: Record<string, unknown>) => ({
-        ...b,
-        category_name: (b.business_categories as Record<string, unknown>)?.name || null,
-        category_display_name: (b.business_categories as Record<string, unknown>)?.display_name || null,
-        category_icon: (b.business_categories as Record<string, unknown>)?.icon || null,
-        category_color: (b.business_categories as Record<string, unknown>)?.color || null,
-      }));
-
-      return NextResponse.json({
-        businesses: transformed,
-        total: fallbackCount || 0,
-        source: 'database'
-      });
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Transform mit Kategorie-Daten
+    const transformed = (data || []).map((b: Record<string, unknown>) => {
+      const cat = categoryMap.get(b.category_id as string);
+      return {
+        ...b,
+        category_name: cat?.name || null,
+        category_display_name: cat?.display_name || null,
+        category_icon: cat?.icon || null,
+        category_color: cat?.color || null,
+      };
+    });
+
     return NextResponse.json({
-      businesses: data || [],
+      businesses: transformed,
       total: count || 0,
       source: 'database'
     });
