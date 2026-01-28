@@ -1460,8 +1460,8 @@ export default function TransportPage() {
               compact={false}
               showStorageOption={true}
               onSaved={() => {
-                setShowSettings(false);
-                fetchDepartures();
+                // Reload to get fresh preferences
+                window.location.reload();
               }}
             />
           </div>
