@@ -321,29 +321,16 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch Transit Data - ALWAYS: trains from Bahnhof + buses from user's stop (or Bahnhof)
+  // Fetch Transit Data - Two separate effects to avoid race conditions
+
+  // Effect 1: ALWAYS fetch trains from Bahnhof - runs immediately on mount
   useEffect(() => {
-    if (!prefsLoaded) return;
-
-    // Get user's saved stop - this may be undefined, 'bahnhof', or another stop like 'wustroweg'
-    const userStopId = preferences.nearestStop?.id;
-    const userStopName = preferences.nearestStop?.name || '';
-
-    // Set bus stop name for display
-    if (userStopId && userStopId !== 'bahnhof') {
-      setBusStopName(userStopName.replace('Zernsdorf, ', ''));
-    } else {
-      setBusStopName('');
-    }
-
-    const fetchTransit = async () => {
+    const fetchTrains = async () => {
       try {
-        // STEP 1: ALWAYS fetch from Bahnhof - this gives us trains AND buses from Bahnhof area
-        const bahnhofRes = await fetch('/api/transit?stop=bahnhof&limit=15');
-        const bahnhofData = await bahnhofRes.json();
+        const res = await fetch('/api/transit?stop=bahnhof&limit=15');
+        const data = await res.json();
 
-        // STEP 2: Extract TRAINS (RB36) from Bahnhof data - ALWAYS show these
-        const trains = (bahnhofData.departures || [])
+        const trains = (data.departures || [])
           .filter((dep: { product: string }) => dep.product === 'regional')
           .slice(0, 2)
           .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
@@ -354,53 +341,60 @@ export default function HomePage() {
             product: dep.product,
           }));
         setTrainDepartures(trains);
-
-        // STEP 3: Get BUSES - either from user's saved stop OR from Bahnhof
-        let buses: typeof trains = [];
-
-        if (userStopId && userStopId !== 'bahnhof') {
-          // User has a custom stop saved - fetch buses from THEIR stop
-          const userStopRes = await fetch(`/api/transit?stop=${userStopId}&limit=10`);
-          const userStopData = await userStopRes.json();
-
-          buses = (userStopData.departures || [])
-            .filter((dep: { product: string }) => dep.product === 'bus')
-            .slice(0, 2)
-            .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
-              line: dep.lineName,
-              direction: dep.direction,
-              time: dep.actualTime || dep.plannedTime,
-              delay: Math.round(dep.delay / 60),
-              product: dep.product,
-            }));
-        } else {
-          // No custom stop - use buses from Bahnhof data
-          buses = (bahnhofData.departures || [])
-            .filter((dep: { product: string }) => dep.product === 'bus')
-            .slice(0, 2)
-            .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
-              line: dep.lineName,
-              direction: dep.direction,
-              time: dep.actualTime || dep.plannedTime,
-              delay: Math.round(dep.delay / 60),
-              product: dep.product,
-            }));
-        }
-        setBusDepartures(buses);
-
       } catch (error) {
-        console.error('Transit fetch error:', error);
+        console.error('Train fetch error:', error);
         setTrainDepartures([]);
+      }
+    };
+
+    fetchTrains();
+    const interval = setInterval(fetchTrains, 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Effect 2: Fetch buses - from user's stop if set, otherwise from Bahnhof
+  useEffect(() => {
+    const userStopId = preferences.nearestStop?.id;
+    const userStopName = preferences.nearestStop?.name || '';
+
+    // Update display name
+    if (userStopId && userStopId !== 'bahnhof') {
+      setBusStopName(userStopName.replace('Zernsdorf, ', ''));
+    } else {
+      setBusStopName('');
+    }
+
+    const fetchBuses = async () => {
+      try {
+        // Determine which stop to fetch buses from
+        const stopToFetch = (userStopId && userStopId !== 'bahnhof') ? userStopId : 'bahnhof';
+
+        const res = await fetch(`/api/transit?stop=${stopToFetch}&limit=10`);
+        const data = await res.json();
+
+        const buses = (data.departures || [])
+          .filter((dep: { product: string }) => dep.product === 'bus')
+          .slice(0, 2)
+          .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
+            line: dep.lineName,
+            direction: dep.direction,
+            time: dep.actualTime || dep.plannedTime,
+            delay: Math.round(dep.delay / 60),
+            product: dep.product,
+          }));
+        setBusDepartures(buses);
+      } catch (error) {
+        console.error('Bus fetch error:', error);
         setBusDepartures([]);
       } finally {
         setTransitLoading(false);
       }
     };
 
-    fetchTransit();
-    const interval = setInterval(fetchTransit, 60 * 1000);
+    fetchBuses();
+    const interval = setInterval(fetchBuses, 60 * 1000);
     return () => clearInterval(interval);
-  }, [prefsLoaded, preferences.nearestStop?.id, preferences.nearestStop?.name]);
+  }, [preferences.nearestStop?.id, preferences.nearestStop?.name]);
 
   // Fetch Traffic Data
   useEffect(() => {
