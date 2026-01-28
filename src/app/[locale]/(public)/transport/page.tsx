@@ -19,7 +19,6 @@ import {
   Calendar,
   Info,
   Settings,
-  Star,
 } from 'lucide-react';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { AddressSettings } from '@/components/settings';
@@ -1468,59 +1467,6 @@ export default function TransportPage() {
           </div>
         )}
 
-        {/* Personalized Section - User's Nearest Stop */}
-        {userStop && userStop.id !== 'bahnhof' && (
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <Star className="text-amber-500" size={20} />
-              Deine Haltestelle: {userStop.name}
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <DepartureBoard
-                title="Alle Abfahrten"
-                icon={<Bus size={18} />}
-                departures={userStopDepartures}
-                loading={loading}
-                error={error}
-                onRefresh={fetchDepartures}
-              />
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <h3 className="font-medium text-amber-800 mb-2 flex items-center gap-2">
-                  <Info size={16} />
-                  Personalisierte Ansicht
-                </h3>
-                <p className="text-sm text-amber-700 mb-3">
-                  Du siehst hier die Abfahrten von deiner gespeicherten Haltestelle.
-                </p>
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="text-sm text-amber-600 hover:text-amber-800 underline"
-                >
-                  Haltestelle ändern
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Prompt to set up personalization */}
-        {!userStop && !showSettings && (
-          <button
-            onClick={() => setShowSettings(true)}
-            className="w-full mb-6 p-4 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl flex items-center justify-between hover:from-emerald-100 hover:to-blue-100 transition group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-lg shadow-sm">
-                <MapPin className="text-emerald-600" size={20} />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-slate-800">Standort speichern</p>
-                <p className="text-sm text-slate-600">Sieh immer zuerst die Abfahrten von deiner Haltestelle</p>
-              </div>
-            </div>
-            <ChevronRight className="text-slate-400 group-hover:text-emerald-600 transition" size={20} />
-          </button>
-        )}
 
         {/* Zernsdorf Section */}
         <section className="mb-8">
@@ -1539,13 +1485,12 @@ export default function TransportPage() {
               filterProducts={['regional']}
             />
             <DepartureBoard
-              title="Bus (721, 723)"
+              title={`Bus (721, 723)${userStop && userStop.id !== 'bahnhof' ? ` - ${userStop.name.replace('Zernsdorf, ', '')}` : ''}`}
               icon={<Bus size={18} />}
-              departures={zernsdorfDepartures}
+              departures={userStop && userStop.id !== 'bahnhof' ? userStopDepartures.filter(d => d.product === 'bus') : zernsdorfDepartures.filter(d => d.product === 'bus')}
               loading={loading}
               error={error}
               onRefresh={fetchDepartures}
-              filterProducts={['bus']}
             />
           </div>
         </section>
