@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Trees, Lock, Loader2, Check, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import type { AuthChangeEvent } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
 export default function ResetPasswordPage() {
@@ -31,7 +32,7 @@ export default function ResetPasswordPage() {
 
     // Listen for auth state changes (when user clicks the reset link)
     const supabase = createClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsValidSession(true);
       }
