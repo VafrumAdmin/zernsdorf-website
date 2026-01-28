@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Impressum',
-  description: 'Impressum von ZernsdorfConnect',
+  description: 'Impressum von Zernsdorf.info',
 };
 
 export default function ImprintPage() {
@@ -22,10 +22,10 @@ export default function ImprintPage() {
               </h2>
               <div className="bg-slate-50 p-6 rounded-lg">
                 <p className="text-slate-700 mb-0">
-                  <strong>ZernsdorfConnect</strong><br />
-                  Gemeinde Zernsdorf<br />
-                  [Straße und Hausnummer einfügen]<br />
-                  15712 Königs Wusterhausen
+                  Jonas Hauke<br />
+                  Karl-Marx-Str. 77<br />
+                  15712 Königs Wusterhausen<br />
+                  Deutschland
                 </p>
               </div>
             </section>
@@ -37,7 +37,7 @@ export default function ImprintPage() {
               </h2>
               <div className="space-y-2 text-slate-600">
                 <p>
-                  <strong>Telefon:</strong> 03375 / 123456
+                  <strong>Telefon:</strong> 01628172496
                 </p>
                 <p>
                   <strong>E-Mail:</strong>{' '}
@@ -48,6 +48,17 @@ export default function ImprintPage() {
               </div>
             </section>
 
+            {/* Umsatzsteuer-ID */}
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                Umsatzsteuer-ID
+              </h2>
+              <p className="text-slate-600">
+                Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:<br />
+                <strong>DE272167285</strong>
+              </p>
+            </section>
+
             {/* Verantwortlich für den Inhalt */}
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-slate-900 mb-4">
@@ -55,9 +66,10 @@ export default function ImprintPage() {
               </h2>
               <div className="bg-slate-50 p-6 rounded-lg">
                 <p className="text-slate-700 mb-0">
-                  [Name des Verantwortlichen einfügen]<br />
-                  [Adresse einfügen]<br />
-                  15712 Königs Wusterhausen
+                  Jonas Hauke<br />
+                  Karl-Marx-Str. 77<br />
+                  15712 Königs Wusterhausen<br />
+                  Deutschland
                 </p>
               </div>
             </section>
@@ -72,7 +84,7 @@ export default function ImprintPage() {
               <p className="text-slate-600 mb-4">
                 Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die
                 Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch
-                keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG
+                keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs. 1 TMG
                 für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen
                 verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch
                 nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu
@@ -139,15 +151,12 @@ export default function ImprintPage() {
               </p>
             </section>
 
-            {/* Hinweis */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-8">
-              <p className="text-amber-800 text-sm">
-                <strong>Hinweis:</strong> Bitte ergänzen Sie die Platzhalter in diesem
-                Impressum mit den tatsächlichen Angaben, bevor Sie die Website
-                veröffentlichen. Bei Unsicherheiten bezüglich der rechtlichen
-                Anforderungen empfehlen wir die Konsultation eines Rechtsanwalts.
+            {/* Stand */}
+            <section className="mt-8 pt-6 border-t border-slate-200">
+              <p className="text-slate-500 text-sm">
+                Stand: Januar 2026
               </p>
-            </div>
+            </section>
           </div>
         </div>
       </div>
