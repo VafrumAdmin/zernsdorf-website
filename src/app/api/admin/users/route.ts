@@ -4,79 +4,77 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// GET - Liste aller Nutzer
+// GET - Liste aller Nutzer (aus Supabase Auth)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
-    const role = searchParams.get('role') || '';
-    const status = searchParams.get('status') || '';
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Versuche user_profiles Tabelle
-    let query = supabase
-      .from('user_profiles')
-      .select(`
-        *,
-        user_roles(
-          role_id,
-          roles(name, display_name, color)
-        )
-      `, { count: 'exact' });
-
-    // Filter
-    if (search) {
-      query = query.or(`email.ilike.%${search}%,username.ilike.%${search}%,display_name.ilike.%${search}%`);
-    }
-
-    if (status === 'active') {
-      query = query.eq('is_active', true).eq('is_banned', false);
-    } else if (status === 'banned') {
-      query = query.eq('is_banned', true);
-    } else if (status === 'inactive') {
-      query = query.eq('is_active', false);
-    }
-
-    // Pagination
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
-    const { data: users, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (error) {
-      // Fallback wenn Tabelle nicht existiert
-      if (error.code === 'PGRST205' || error.message.includes('does not exist')) {
-        return NextResponse.json({
-          users: getDemoUsers(),
-          total: 5,
-          page,
-          limit,
-          source: 'demo'
-        });
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-      throw error;
+    });
+
+    // Hole Nutzer aus Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: limit
+    });
+
+    if (authError) {
+      console.error('Auth error:', authError);
+      throw authError;
+    }
+
+    // Transformiere Auth-Nutzer in unser Format
+    let users = (authData?.users || []).map(user => ({
+      id: user.id,
+      auth_user_id: user.id,
+      email: user.email || '',
+      username: user.user_metadata?.username || null,
+      display_name: user.user_metadata?.display_name || user.user_metadata?.username || null,
+      avatar_url: user.user_metadata?.avatar_url || null,
+      is_active: true,
+      is_verified: user.email_confirmed_at ? true : false,
+      is_banned: false,
+      ban_reason: null,
+      banned_at: null,
+      created_at: user.created_at,
+      last_login_at: user.last_sign_in_at,
+      login_count: 0,
+      user_roles: [{ roles: { name: 'member', display_name: 'Mitglied', color: '#6B7280' } }]
+    }));
+
+    // Filter nach Suche
+    if (search) {
+      const searchLower = search.toLowerCase();
+      users = users.filter(u =>
+        u.email.toLowerCase().includes(searchLower) ||
+        (u.username && u.username.toLowerCase().includes(searchLower)) ||
+        (u.display_name && u.display_name.toLowerCase().includes(searchLower))
+      );
     }
 
     return NextResponse.json({
-      users: users || [],
-      total: count || 0,
+      users,
+      total: authData?.users?.length || 0,
       page,
       limit,
-      source: 'database'
+      source: 'auth'
     });
   } catch (error) {
     console.error('Users fetch error:', error);
     return NextResponse.json({
-      users: getDemoUsers(),
-      total: 5,
+      users: [],
+      total: 0,
       page: 1,
       limit: 20,
-      source: 'demo'
+      source: 'error',
+      error: String(error)
     });
   }
 }
