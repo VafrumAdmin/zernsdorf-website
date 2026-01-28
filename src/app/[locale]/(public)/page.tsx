@@ -325,9 +325,11 @@ export default function HomePage() {
   useEffect(() => {
     if (!prefsLoaded) return;
 
-    // Set bus stop name if user has one saved (and it's not the Bahnhof)
+    // Get user's saved stop ID and name
     const userStopId = preferences.nearestStop?.id;
     const userStopName = preferences.nearestStop?.name || '';
+
+    // Set bus stop name for display (remove prefix)
     if (userStopId && userStopId !== 'bahnhof') {
       setBusStopName(userStopName.replace('Zernsdorf, ', ''));
     } else {
@@ -336,10 +338,11 @@ export default function HomePage() {
 
     const fetchTransit = async () => {
       try {
-        // Always fetch trains from Bahnhof
-        const trainRes = await fetch('/api/transit?stop=bahnhof&limit=3');
+        // Always fetch from Bahnhof first - this gets BOTH trains and buses
+        const trainRes = await fetch('/api/transit?stop=bahnhof&limit=10');
         const trainData = await trainRes.json();
 
+        // Extract TRAINS from Bahnhof (RB36)
         if (trainData.departures && trainData.departures.length > 0) {
           const trains = trainData.departures
             .filter((dep: { product: string }) => dep.product === 'regional')
@@ -356,9 +359,10 @@ export default function HomePage() {
           setTrainDepartures([]);
         }
 
-        // Fetch buses from user's stop (if different from Bahnhof)
+        // BUSES: Either from user's saved stop OR from Bahnhof
         if (userStopId && userStopId !== 'bahnhof') {
-          const busRes = await fetch(`/api/transit?stop=${userStopId}&limit=3`);
+          // User has a saved stop - fetch buses from THEIR stop
+          const busRes = await fetch(`/api/transit?stop=${userStopId}&limit=5`);
           const busData = await busRes.json();
 
           if (busData.departures && busData.departures.length > 0) {
@@ -377,7 +381,7 @@ export default function HomePage() {
             setBusDepartures([]);
           }
         } else {
-          // If no user stop or user stop is Bahnhof, get buses from Bahnhof
+          // No saved stop or stop is Bahnhof - get buses from Bahnhof data
           const buses = trainData.departures
             ?.filter((dep: { product: string }) => dep.product === 'bus')
             .slice(0, 2)
@@ -398,10 +402,11 @@ export default function HomePage() {
         setTransitLoading(false);
       }
     };
+
     fetchTransit();
     const interval = setInterval(fetchTransit, 60 * 1000);
     return () => clearInterval(interval);
-  }, [prefsLoaded, preferences.nearestStop]);
+  }, [prefsLoaded, preferences.nearestStop?.id, preferences.nearestStop?.name]);
 
   // Fetch Traffic Data
   useEffect(() => {
