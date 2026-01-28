@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
-import { Trees, Mail, MapPin, Phone, Facebook, Instagram } from 'lucide-react';
+import { Trees, Facebook, Instagram } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { CookieSettingsButton } from '@/components/cookie';
 
@@ -11,7 +11,7 @@ export function Footer() {
   return (
     <footer className="bg-slate-900 text-slate-300">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center gap-3 mb-4">
@@ -51,7 +51,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               {[
                 { href: '/', label: 'Startseite' },
-                { href: '/directory', label: 'Verzeichnis' },
+                { href: '/listings', label: 'Branchenverzeichnis' },
                 { href: '/events', label: 'Veranstaltungen' },
                 { href: '/waste', label: 'Abfallkalender' },
                 { href: '/history', label: 'Geschichte' },
@@ -75,10 +75,11 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-sm">
               {[
-                { href: '/services/emergency', label: 'Notdienste' },
-                { href: '/services/water', label: 'Wasserqualität' },
-                { href: '/services/report', label: 'Mängelmelder' },
-                { href: '/contact', label: 'Kontakt' },
+                { href: '/transport', label: 'ÖPNV & Fahrpläne' },
+                { href: '/weather', label: 'Wetter' },
+                { href: '/map', label: 'Interaktive Karte' },
+                { href: '/report', label: 'Mängelmelder' },
+                { href: '/bulletin', label: 'Schwarzes Brett' },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -89,32 +90,6 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="font-semibold mb-4 text-white">
-              Kontakt
-            </h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-500" />
-                <div>
-                  <p>Gemeinde Zernsdorf</p>
-                  <p>15712 Königs Wusterhausen</p>
-                </div>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 flex-shrink-0 text-slate-500" />
-                <span>03375 / 123456</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 flex-shrink-0 text-slate-500" />
-                <a href="mailto:info@zernsdorf.info" className="hover:text-white transition-colors">
-                  info@zernsdorf.info
-                </a>
-              </li>
             </ul>
           </div>
         </div>
