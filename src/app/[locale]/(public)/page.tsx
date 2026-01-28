@@ -338,14 +338,20 @@ export default function HomePage() {
 
     const fetchTransit = async () => {
       try {
-        // Always fetch from Bahnhof first - this gets BOTH trains and buses
+        // ALWAYS fetch trains from Bahnhof first
         const trainRes = await fetch('/api/transit?stop=bahnhof&limit=10');
         const trainData = await trainRes.json();
 
-        // Extract TRAINS from Bahnhof (RB36)
-        if (trainData.departures && trainData.departures.length > 0) {
-          const trains = trainData.departures
-            .filter((dep: { product: string }) => dep.product === 'regional')
+        // DEBUG
+        console.log('[ÖPNV Widget] Bahnhof API response:', trainData.departures?.length, 'departures');
+        console.log('[ÖPNV Widget] Products:', trainData.departures?.map((d: {product: string}) => d.product));
+
+        // Extract TRAINS from Bahnhof (RB36) - ALWAYS do this
+        const allTrains = trainData.departures?.filter((dep: { product: string }) => dep.product === 'regional') || [];
+        console.log('[ÖPNV Widget] Found trains:', allTrains.length);
+
+        if (allTrains.length > 0) {
+          const trains = allTrains
             .slice(0, 2)
             .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
               line: dep.lineName,
@@ -360,10 +366,14 @@ export default function HomePage() {
         }
 
         // BUSES: Either from user's saved stop OR from Bahnhof
+        console.log('[ÖPNV Widget] User stop:', userStopId);
+
         if (userStopId && userStopId !== 'bahnhof') {
           // User has a saved stop - fetch buses from THEIR stop
+          console.log('[ÖPNV Widget] Fetching buses from user stop:', userStopId);
           const busRes = await fetch(`/api/transit?stop=${userStopId}&limit=5`);
           const busData = await busRes.json();
+          console.log('[ÖPNV Widget] User stop response:', busData.departures?.length, 'departures');
 
           if (busData.departures && busData.departures.length > 0) {
             const buses = busData.departures
