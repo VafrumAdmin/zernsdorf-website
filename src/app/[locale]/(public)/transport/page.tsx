@@ -1395,13 +1395,13 @@ export default function TransportPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userStop?.id]);
 
   useEffect(() => {
     if (prefsLoaded) {
       fetchDepartures();
     }
-  }, [prefsLoaded, userStop?.id]);
+  }, [prefsLoaded, fetchDepartures]);
 
   useEffect(() => {
     if (!prefsLoaded) return;
