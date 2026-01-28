@@ -321,15 +321,15 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch Transit Data - trains from Bahnhof + buses from user's stop
+  // Fetch Transit Data - ALWAYS: trains from Bahnhof + buses from user's stop (or Bahnhof)
   useEffect(() => {
     if (!prefsLoaded) return;
 
-    // Get user's saved stop ID and name
+    // Get user's saved stop - this may be undefined, 'bahnhof', or another stop like 'wustroweg'
     const userStopId = preferences.nearestStop?.id;
     const userStopName = preferences.nearestStop?.name || '';
 
-    // Set bus stop name for display (remove prefix)
+    // Set bus stop name for display
     if (userStopId && userStopId !== 'bahnhof') {
       setBusStopName(userStopName.replace('Zernsdorf, ', ''));
     } else {
@@ -338,20 +338,33 @@ export default function HomePage() {
 
     const fetchTransit = async () => {
       try {
-        // ALWAYS fetch trains from Bahnhof first
-        const trainRes = await fetch('/api/transit?stop=bahnhof&limit=10');
-        const trainData = await trainRes.json();
+        // STEP 1: ALWAYS fetch from Bahnhof - this gives us trains AND buses from Bahnhof area
+        const bahnhofRes = await fetch('/api/transit?stop=bahnhof&limit=15');
+        const bahnhofData = await bahnhofRes.json();
 
-        // DEBUG
-        console.log('[ÖPNV Widget] Bahnhof API response:', trainData.departures?.length, 'departures');
-        console.log('[ÖPNV Widget] Products:', trainData.departures?.map((d: {product: string}) => d.product));
+        // STEP 2: Extract TRAINS (RB36) from Bahnhof data - ALWAYS show these
+        const trains = (bahnhofData.departures || [])
+          .filter((dep: { product: string }) => dep.product === 'regional')
+          .slice(0, 2)
+          .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
+            line: dep.lineName,
+            direction: dep.direction,
+            time: dep.actualTime || dep.plannedTime,
+            delay: Math.round(dep.delay / 60),
+            product: dep.product,
+          }));
+        setTrainDepartures(trains);
 
-        // Extract TRAINS from Bahnhof (RB36) - ALWAYS do this
-        const allTrains = trainData.departures?.filter((dep: { product: string }) => dep.product === 'regional') || [];
-        console.log('[ÖPNV Widget] Found trains:', allTrains.length);
+        // STEP 3: Get BUSES - either from user's saved stop OR from Bahnhof
+        let buses: typeof trains = [];
 
-        if (allTrains.length > 0) {
-          const trains = allTrains
+        if (userStopId && userStopId !== 'bahnhof') {
+          // User has a custom stop saved - fetch buses from THEIR stop
+          const userStopRes = await fetch(`/api/transit?stop=${userStopId}&limit=10`);
+          const userStopData = await userStopRes.json();
+
+          buses = (userStopData.departures || [])
+            .filter((dep: { product: string }) => dep.product === 'bus')
             .slice(0, 2)
             .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
               line: dep.lineName,
@@ -360,40 +373,10 @@ export default function HomePage() {
               delay: Math.round(dep.delay / 60),
               product: dep.product,
             }));
-          setTrainDepartures(trains);
         } else {
-          setTrainDepartures([]);
-        }
-
-        // BUSES: Either from user's saved stop OR from Bahnhof
-        console.log('[ÖPNV Widget] User stop:', userStopId);
-
-        if (userStopId && userStopId !== 'bahnhof') {
-          // User has a saved stop - fetch buses from THEIR stop
-          console.log('[ÖPNV Widget] Fetching buses from user stop:', userStopId);
-          const busRes = await fetch(`/api/transit?stop=${userStopId}&limit=5`);
-          const busData = await busRes.json();
-          console.log('[ÖPNV Widget] User stop response:', busData.departures?.length, 'departures');
-
-          if (busData.departures && busData.departures.length > 0) {
-            const buses = busData.departures
-              .filter((dep: { product: string }) => dep.product === 'bus')
-              .slice(0, 2)
-              .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
-                line: dep.lineName,
-                direction: dep.direction,
-                time: dep.actualTime || dep.plannedTime,
-                delay: Math.round(dep.delay / 60),
-                product: dep.product,
-              }));
-            setBusDepartures(buses);
-          } else {
-            setBusDepartures([]);
-          }
-        } else {
-          // No saved stop or stop is Bahnhof - get buses from Bahnhof data
-          const buses = trainData.departures
-            ?.filter((dep: { product: string }) => dep.product === 'bus')
+          // No custom stop - use buses from Bahnhof data
+          buses = (bahnhofData.departures || [])
+            .filter((dep: { product: string }) => dep.product === 'bus')
             .slice(0, 2)
             .map((dep: { lineName: string; direction: string; actualTime: string | null; plannedTime: string; delay: number; product: 'bus' | 'regional' }) => ({
               line: dep.lineName,
@@ -401,9 +384,10 @@ export default function HomePage() {
               time: dep.actualTime || dep.plannedTime,
               delay: Math.round(dep.delay / 60),
               product: dep.product,
-            })) || [];
-          setBusDepartures(buses);
+            }));
         }
+        setBusDepartures(buses);
+
       } catch (error) {
         console.error('Transit fetch error:', error);
         setTrainDepartures([]);
