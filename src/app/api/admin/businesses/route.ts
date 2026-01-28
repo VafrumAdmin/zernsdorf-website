@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: 'Supabase nicht konfiguriert' }, { status: 503 });
+  if (!isServiceRoleConfigured()) {
+    return NextResponse.json({ error: 'Service Role nicht konfiguriert' }, { status: 503 });
   }
 
   try {
@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name ist erforderlich' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // Use admin client to bypass RLS
+    const supabase = createAdminClient()!;
 
     const { data, error } = await supabase
       .from('businesses')
@@ -166,8 +167,8 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: 'Supabase nicht konfiguriert' }, { status: 503 });
+  if (!isServiceRoleConfigured()) {
+    return NextResponse.json({ error: 'Service Role nicht konfiguriert' }, { status: 503 });
   }
 
   try {
@@ -177,7 +178,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'ID ist erforderlich' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // Use admin client to bypass RLS
+    const supabase = createAdminClient()!;
 
     // Entferne id aus dem Update-Objekt
     const { id, ...updateData } = body;
