@@ -17,6 +17,7 @@ export async function GET() {
         events_upcoming: 0,
         traffic_alerts: 0,
         users_count: 0,
+        suggestions_pending: 0,
       }
     });
   }
@@ -30,7 +31,8 @@ export async function GET() {
       activeBusinessesResult,
       upcomingEventsResult,
       trafficAlertsResult,
-      usersResult
+      usersResult,
+      pendingSuggestionsResult
     ] = await Promise.all([
       // Alle Businesses
       supabase.from('businesses').select('id', { count: 'exact', head: true }),
@@ -45,6 +47,9 @@ export async function GET() {
         .neq('status', 'open'),
       // Benutzer
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      // Ausstehende Vorschläge
+      supabase.from('business_suggestions').select('id', { count: 'exact', head: true })
+        .eq('status', 'pending'),
     ]);
 
     return NextResponse.json({
@@ -54,6 +59,7 @@ export async function GET() {
         events_upcoming: upcomingEventsResult.count || 0,
         traffic_alerts: trafficAlertsResult.count || 0,
         users_count: usersResult.count || 0,
+        suggestions_pending: pendingSuggestionsResult.count || 0,
       }
     });
   } catch (error) {

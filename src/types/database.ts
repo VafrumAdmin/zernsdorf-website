@@ -675,6 +675,7 @@ export interface Business {
   updated_at: string;
 }
 
+// Legacy/Simple Opening Hours (string-based, for backwards compatibility)
 export interface OpeningHours {
   mo?: string;
   di?: string;
@@ -684,6 +685,42 @@ export interface OpeningHours {
   sa?: string;
   so?: string;
   feiertag?: string;
+}
+
+// Extended Opening Hours (structured, with multiple time ranges)
+export interface TimeRange {
+  from: string;  // "HH:MM"
+  to: string;    // "HH:MM"
+}
+
+export type DayStatus = 'open' | 'closed' | 'holiday';
+
+export interface DaySchedule {
+  status: DayStatus;
+  ranges: TimeRange[];  // 0-2 time ranges per day
+}
+
+export type DayKey = 'mo' | 'di' | 'mi' | 'do' | 'fr' | 'sa' | 'so' | 'feiertag';
+
+export interface ExtendedOpeningHours {
+  mo?: DaySchedule;
+  di?: DaySchedule;
+  mi?: DaySchedule;
+  do?: DaySchedule;
+  fr?: DaySchedule;
+  sa?: DaySchedule;
+  so?: DaySchedule;
+  feiertag?: DaySchedule;
+}
+
+// Type that can be either legacy string-based or extended structured opening hours
+export type OpeningHoursData = OpeningHours | ExtendedOpeningHours;
+
+// Type guard to check if opening hours is extended format
+export function isExtendedOpeningHours(hours: OpeningHoursData | null | undefined): hours is ExtendedOpeningHours {
+  if (!hours) return false;
+  const values = Object.values(hours);
+  return values.length > 0 && values.some(v => typeof v === 'object' && v !== null && 'status' in v);
 }
 
 export interface BusinessWithCategory extends Business {
@@ -698,6 +735,82 @@ export interface BusinessInsert extends Partial<Omit<Business, 'id' | 'slug' | '
 }
 
 export interface BusinessUpdate extends Partial<Omit<Business, 'id' | 'created_at'>> {}
+
+// =====================================================
+// BUSINESS SUGGESTIONS
+// =====================================================
+
+export type SuggestionStatus = 'pending' | 'approved' | 'rejected';
+
+export interface BusinessSuggestion {
+  id: string;
+
+  // Business fields
+  name: string;
+  category_id: string | null;
+  description: string | null;
+  street: string | null;
+  house_number: string | null;
+  postal_code: string;
+  city: string;
+  location: string;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  opening_hours: OpeningHoursData | null;
+  opening_hours_text: string | null;
+  tags: string[] | null;
+  latitude: number | null;
+  longitude: number | null;
+
+  // Suggestion-specific fields
+  status: SuggestionStatus;
+  submitted_by_name: string | null;
+  submitted_by_email: string | null;
+  submitted_by_phone: string | null;
+  admin_notes: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessSuggestionWithCategory extends BusinessSuggestion {
+  category_name: string | null;
+  category_display_name: string | null;
+  category_icon: string | null;
+  category_color: string | null;
+}
+
+export interface BusinessSuggestionForm {
+  name: string;
+  category_id?: string;
+  description?: string;
+  street?: string;
+  house_number?: string;
+  postal_code?: string;
+  city?: string;
+  location?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  opening_hours?: OpeningHoursData;
+  opening_hours_text?: string;
+  tags?: string[];
+
+  // Submitter contact info
+  submitted_by_name?: string;
+  submitted_by_email?: string;
+  submitted_by_phone?: string;
+}
+
+export interface BusinessSuggestionInsert extends Partial<Omit<BusinessSuggestion, 'id' | 'created_at' | 'updated_at' | 'reviewed_at' | 'reviewed_by'>> {
+  name: string;
+}
+
+export interface BusinessSuggestionUpdate extends Partial<Omit<BusinessSuggestion, 'id' | 'created_at'>> {}
 
 // Traffic Locations
 export interface TrafficLocation {
@@ -852,4 +965,5 @@ export interface AdminDashboardStats {
   events_upcoming: number;
   traffic_alerts: number;
   users_count: number;
+  suggestions_pending?: number;
 }

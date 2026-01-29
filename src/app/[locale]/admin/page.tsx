@@ -37,6 +37,10 @@ import {
   TrendingUp,
   Menu,
   ArrowRight,
+  Inbox,
+  Check,
+  Ban,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -48,7 +52,12 @@ import type {
   TrafficLocation,
   TrafficStatusWithLocation,
   AdminDashboardStats,
+  BusinessSuggestionWithCategory,
+  ExtendedOpeningHours,
 } from '@/types/database';
+import { isExtendedOpeningHours } from '@/types/database';
+import { OpeningHoursEditor } from '@/components/OpeningHoursEditor';
+import { createEmptyOpeningHours } from '@/lib/opening-hours';
 
 // ============================================
 // INTERFACES
@@ -96,7 +105,7 @@ interface TestResult {
   hint?: string;
 }
 
-type TabType = 'dashboard' | 'directory' | 'traffic' | 'events' | 'maintenance' | 'waste';
+type TabType = 'dashboard' | 'directory' | 'suggestions' | 'traffic' | 'events' | 'maintenance' | 'waste';
 
 // ============================================
 // MAIN COMPONENT
@@ -146,6 +155,12 @@ export default function AdminPage() {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [showEventForm, setShowEventForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+
+  // Suggestions State
+  const [suggestions, setSuggestions] = useState<BusinessSuggestionWithCategory[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [showSuggestionDetail, setShowSuggestionDetail] = useState(false);
+  const [editingSuggestion, setEditingSuggestion] = useState<BusinessSuggestionWithCategory | null>(null);
 
   // Traffic State
   const [trafficLocations, setTrafficLocations] = useState<TrafficLocation[]>([]);
@@ -258,6 +273,19 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchSuggestions = useCallback(async () => {
+    setSuggestionsLoading(true);
+    try {
+      const res = await fetch('/api/admin/suggestions?status=pending');
+      const data = await res.json();
+      setSuggestions(data.suggestions || []);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }, []);
+
   // Initial Load
   useEffect(() => {
     checkSession();
@@ -281,6 +309,9 @@ export default function AdminPage() {
       case 'directory':
         fetchBusinesses();
         break;
+      case 'suggestions':
+        fetchSuggestions();
+        break;
       case 'events':
         fetchEvents();
         break;
@@ -288,7 +319,7 @@ export default function AdminPage() {
         fetchTraffic();
         break;
     }
-  }, [activeTab, isAuthenticated, fetchBusinesses, fetchEvents, fetchTraffic]);
+  }, [activeTab, isAuthenticated, fetchBusinesses, fetchSuggestions, fetchEvents, fetchTraffic]);
 
   // ============================================
   // HANDLERS
@@ -520,13 +551,68 @@ export default function AdminPage() {
     }
   };
 
+  // Suggestion Handlers
+  const approveSuggestion = async (id: string) => {
+    if (!confirm('Diesen Vorschlag freigeben und in das Branchenverzeichnis übernehmen?')) return;
+
+    try {
+      const res = await fetch('/api/admin/suggestions/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        alert('Vorschlag wurde freigegeben!');
+        fetchSuggestions();
+        fetchStats();
+        setShowSuggestionDetail(false);
+        setEditingSuggestion(null);
+      } else {
+        alert(`Fehler: ${data.error || 'Unbekannter Fehler'}`);
+      }
+    } catch (error) {
+      console.error('Error approving suggestion:', error);
+      alert('Fehler beim Freigeben des Vorschlags');
+    }
+  };
+
+  const rejectSuggestion = async (id: string) => {
+    if (!confirm('Diesen Vorschlag ablehnen und löschen?')) return;
+
+    try {
+      const res = await fetch('/api/admin/suggestions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        fetchSuggestions();
+        fetchStats();
+        setShowSuggestionDetail(false);
+        setEditingSuggestion(null);
+      } else {
+        alert(`Fehler: ${data.error || 'Unbekannter Fehler'}`);
+      }
+    } catch (error) {
+      console.error('Error rejecting suggestion:', error);
+      alert('Fehler beim Ablehnen des Vorschlags');
+    }
+  };
+
   // ============================================
   // RENDER HELPERS
   // ============================================
 
-  const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'directory', label: 'Branchenverzeichnis', icon: <Building2 className="w-4 h-4" /> },
+    { id: 'suggestions', label: 'Vorschläge', icon: <Inbox className="w-4 h-4" />, badge: stats?.suggestions_pending || 0 },
     { id: 'traffic', label: 'Verkehrsstatus', icon: <Car className="w-4 h-4" /> },
     { id: 'events', label: 'Events', icon: <Calendar className="w-4 h-4" /> },
     { id: 'maintenance', label: 'Wartungsmodus', icon: <Wrench className="w-4 h-4" /> },
@@ -683,6 +769,11 @@ export default function AdminPage() {
               >
                 {tab.icon}
                 {tab.label}
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className="ml-1 px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -967,6 +1058,115 @@ export default function AdminPage() {
                 categories={categories}
                 onClose={() => { setShowBusinessForm(false); setEditingBusiness(null); }}
                 onSave={() => { setShowBusinessForm(false); setEditingBusiness(null); fetchBusinesses(); }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Suggestions Tab */}
+        {activeTab === 'suggestions' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-slate-900">Eingetragene Vorschläge</h3>
+                <p className="text-sm text-slate-500">Öffentlich eingereichte Vorschläge für das Branchenverzeichnis</p>
+              </div>
+            </div>
+
+            {suggestionsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-600 border-t-transparent"></div>
+              </div>
+            ) : suggestions.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+                <Inbox className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-600 mb-2">Keine ausstehenden Vorschläge</p>
+                <p className="text-sm text-slate-400">
+                  Neue Vorschläge werden hier angezeigt, sobald sie eingereicht werden.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {suggestions.map((suggestion) => (
+                  <div
+                    key={suggestion.id}
+                    className="bg-white rounded-xl border border-slate-200 p-4 hover:border-emerald-300 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-slate-900">{suggestion.name}</h4>
+                          {suggestion.category_display_name && (
+                            <span
+                              className="px-2 py-0.5 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${suggestion.category_color}20`,
+                                color: suggestion.category_color || '#666',
+                              }}
+                            >
+                              {suggestion.category_display_name}
+                            </span>
+                          )}
+                        </div>
+                        {suggestion.description && (
+                          <p className="text-sm text-slate-500 mb-2 line-clamp-2">{suggestion.description}</p>
+                        )}
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
+                          {suggestion.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {suggestion.location}
+                            </span>
+                          )}
+                          {suggestion.submitted_by_name && (
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              von {suggestion.submitted_by_name}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(suggestion.created_at).toLocaleDateString('de-DE')}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => { setEditingSuggestion(suggestion); setShowSuggestionDetail(true); }}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Details anzeigen"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => approveSuggestion(suggestion.id)}
+                          className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Freigeben"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => rejectSuggestion(suggestion.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Ablehnen"
+                        >
+                          <Ban className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Suggestion Detail Modal */}
+            {showSuggestionDetail && editingSuggestion && (
+              <SuggestionDetailModal
+                suggestion={editingSuggestion}
+                categories={categories}
+                onClose={() => { setShowSuggestionDetail(false); setEditingSuggestion(null); }}
+                onApprove={() => approveSuggestion(editingSuggestion.id)}
+                onReject={() => rejectSuggestion(editingSuggestion.id)}
               />
             )}
           </div>
@@ -1399,6 +1599,9 @@ function BusinessFormModal({
   onClose: () => void;
   onSave: () => void;
 }) {
+  // Check if existing business has structured opening hours
+  const hasStructuredHours = business?.opening_hours && isExtendedOpeningHours(business.opening_hours);
+
   const [formData, setFormData] = useState({
     name: business?.name || '',
     category_id: business?.category_id || '',
@@ -1411,11 +1614,13 @@ function BusinessFormModal({
     phone: business?.phone || '',
     email: business?.email || '',
     website: business?.website || '',
+    opening_hours: (hasStructuredHours ? business.opening_hours : createEmptyOpeningHours()) as ExtendedOpeningHours,
     opening_hours_text: business?.opening_hours_text || '',
     is_active: business?.is_active ?? true,
     is_featured: business?.is_featured ?? false,
     is_recommended: business?.is_recommended ?? false,
   });
+  const [useStructuredHours, setUseStructuredHours] = useState(hasStructuredHours || !business?.opening_hours_text);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -1427,7 +1632,12 @@ function BusinessFormModal({
     try {
       const url = '/api/admin/businesses';
       const method = business ? 'PUT' : 'POST';
-      const body = business ? { ...formData, id: business.id } : formData;
+      const submitData = {
+        ...formData,
+        opening_hours: useStructuredHours ? formData.opening_hours : null,
+        opening_hours_text: !useStructuredHours ? formData.opening_hours_text : null,
+      };
+      const body = business ? { ...submitData, id: business.id } : submitData;
 
       const res = await fetch(url, {
         method,
@@ -1590,15 +1800,45 @@ function BusinessFormModal({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Öffnungszeiten</label>
-              <input
-                type="text"
-                value={formData.opening_hours_text}
-                onChange={(e) => setFormData({ ...formData, opening_hours_text: e.target.value })}
-                placeholder="z.B. Mo-Fr 8-18 Uhr"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-              />
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-slate-700">Öffnungszeiten</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      checked={useStructuredHours}
+                      onChange={() => setUseStructuredHours(true)}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-slate-600">Strukturiert</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      checked={!useStructuredHours}
+                      onChange={() => setUseStructuredHours(false)}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-slate-600">Freitext</span>
+                  </label>
+                </div>
+              </div>
+
+              {useStructuredHours ? (
+                <OpeningHoursEditor
+                  value={formData.opening_hours}
+                  onChange={(hours) => setFormData({ ...formData, opening_hours: hours })}
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={formData.opening_hours_text}
+                  onChange={(e) => setFormData({ ...formData, opening_hours_text: e.target.value })}
+                  placeholder="z.B. Mo-Fr 8-18 Uhr"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                />
+              )}
             </div>
 
             <div className="md:col-span-2 flex flex-wrap gap-4">
@@ -1874,6 +2114,205 @@ function EventFormModal({
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// Suggestion Detail Modal
+function SuggestionDetailModal({
+  suggestion,
+  categories,
+  onClose,
+  onApprove,
+  onReject,
+}: {
+  suggestion: BusinessSuggestionWithCategory;
+  categories: BusinessCategory[];
+  onClose: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  const formatOpeningHours = (hours: unknown): string => {
+    if (!hours) return '-';
+    if (typeof hours === 'string') return hours;
+
+    // Check if it's extended format
+    const extHours = hours as Record<string, unknown>;
+    const dayLabels: Record<string, string> = {
+      mo: 'Mo', di: 'Di', mi: 'Mi', do: 'Do', fr: 'Fr', sa: 'Sa', so: 'So', feiertag: 'Feiertag'
+    };
+
+    const lines: string[] = [];
+    for (const [day, schedule] of Object.entries(extHours)) {
+      if (schedule && typeof schedule === 'object') {
+        const s = schedule as { status: string; ranges: Array<{ from: string; to: string }> };
+        if (s.status === 'closed') {
+          lines.push(`${dayLabels[day] || day}: Geschlossen`);
+        } else if (s.status === 'holiday') {
+          lines.push(`${dayLabels[day] || day}: Ruhetag`);
+        } else if (s.ranges && s.ranges.length > 0) {
+          const rangeStr = s.ranges.map(r => `${r.from} - ${r.to}`).join(', ');
+          lines.push(`${dayLabels[day] || day}: ${rangeStr}`);
+        }
+      } else if (typeof schedule === 'string') {
+        lines.push(`${dayLabels[day] || day}: ${schedule}`);
+      }
+    }
+
+    return lines.length > 0 ? lines.join('\n') : '-';
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <div>
+            <h2 className="font-semibold text-lg text-slate-900">Vorschlag prüfen</h2>
+            <p className="text-sm text-slate-500">
+              Eingereicht am {new Date(suggestion.created_at).toLocaleDateString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+          {/* Business Info */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Geschäftsinformationen</h3>
+              <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500">Name</label>
+                    <p className="font-medium text-slate-900">{suggestion.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">Kategorie</label>
+                    <p className="font-medium text-slate-900">{suggestion.category_display_name || 'Keine'}</p>
+                  </div>
+                </div>
+                {suggestion.description && (
+                  <div>
+                    <label className="text-xs text-slate-500">Beschreibung</label>
+                    <p className="text-slate-700">{suggestion.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Adresse</h3>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500">Straße</label>
+                    <p className="text-slate-700">{suggestion.street} {suggestion.house_number}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">PLZ / Ort</label>
+                    <p className="text-slate-700">{suggestion.postal_code} {suggestion.city}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">Region</label>
+                    <p className="text-slate-700">{suggestion.location}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Kontakt</h3>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500">Telefon</label>
+                    <p className="text-slate-700">{suggestion.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">E-Mail</label>
+                    <p className="text-slate-700">{suggestion.email || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">Website</label>
+                    <p className="text-slate-700">
+                      {suggestion.website ? (
+                        <a href={suggestion.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {suggestion.website}
+                        </a>
+                      ) : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Öffnungszeiten</h3>
+              <div className="bg-slate-50 rounded-lg p-4">
+                {suggestion.opening_hours ? (
+                  <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans">
+                    {formatOpeningHours(suggestion.opening_hours)}
+                  </pre>
+                ) : suggestion.opening_hours_text ? (
+                  <p className="text-slate-700">{suggestion.opening_hours_text}</p>
+                ) : (
+                  <p className="text-slate-400">Keine Angaben</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Einreicher</h3>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs text-amber-700">Name</label>
+                    <p className="text-slate-700">{suggestion.submitted_by_name || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-amber-700">E-Mail</label>
+                    <p className="text-slate-700">{suggestion.submitted_by_email || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-amber-700">Telefon</label>
+                    <p className="text-slate-700">{suggestion.submitted_by_phone || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between">
+          <Button variant="outline" onClick={onClose}>
+            Schließen
+          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={onReject}
+              className="bg-red-600 hover:bg-red-700 text-white gap-2"
+            >
+              <Ban className="w-4 h-4" />
+              Ablehnen
+            </Button>
+            <Button
+              onClick={onApprove}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+            >
+              <Check className="w-4 h-4" />
+              Freigeben
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

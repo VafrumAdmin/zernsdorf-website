@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   Trash2,
   Users,
+  Plus,
 } from 'lucide-react';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 
@@ -741,6 +742,13 @@ export default function HomePage() {
                       Live
                     </span>
                   )}
+                  <Link
+                    href="/suggest"
+                    className={`ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium ${t.bg} text-white rounded-lg hover:opacity-90 transition-all shadow-sm`}
+                  >
+                    <Plus size={16} />
+                    Eintrag vorschlagen
+                  </Link>
                 </div>
 
                 {/* Filters */}
