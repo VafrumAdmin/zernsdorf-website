@@ -966,4 +966,83 @@ export interface AdminDashboardStats {
   traffic_alerts: number;
   users_count: number;
   suggestions_pending?: number;
+  constructions_active?: number;
+}
+
+// =====================================================
+// CONSTRUCTIONS (Baustellen)
+// =====================================================
+
+export type ConstructionType = 'road' | 'highway' | 'rail' | 'bridge' | 'utility' | 'other';
+export type ConstructionStatus = 'planned' | 'active' | 'completed' | 'cancelled';
+export type ConstructionImpactLevel = 'low' | 'medium' | 'high' | 'critical';
+
+export interface Construction {
+  id: string;
+
+  // Basis-Informationen
+  title: string;
+  description: string | null;
+  location: string;
+
+  // Kategorisierung
+  type: ConstructionType;
+  category: string | null; // z.B. "Zernsdorf", "KW", "A10", "A12", "A13", "Bahn"
+
+  // Zeitraum
+  start_date: string;
+  end_date: string | null;
+
+  // Status
+  status: ConstructionStatus;
+
+  // Auswirkungen
+  impact_level: ConstructionImpactLevel;
+  traffic_impact: string | null;
+  detour_info: string | null;
+
+  // Koordinaten
+  latitude: number | null;
+  longitude: number | null;
+
+  // Quelle
+  source: string | null;
+  source_url: string | null;
+  external_id: string | null;
+
+  // Automatische Abfrage
+  is_auto_fetched: boolean;
+  last_fetched_at: string | null;
+
+  // Sichtbarkeit
+  is_featured: boolean;
+  is_visible: boolean;
+
+  // Meta
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export interface ConstructionInsert extends Partial<Omit<Construction, 'id' | 'created_at' | 'updated_at'>> {
+  title: string;
+  location: string;
+  start_date: string;
+}
+
+export interface ConstructionUpdate extends Partial<Omit<Construction, 'id' | 'created_at'>> {}
+
+// Construction Sources (für automatische Abfrage)
+export interface ConstructionSource {
+  id: string;
+  name: string;
+  url: string;
+  type: 'website' | 'api' | 'rss';
+  category: string | null;
+  is_active: boolean;
+  fetch_interval_hours: number;
+  last_fetched_at: string | null;
+  last_fetch_status: string | null;
+  last_fetch_message: string | null;
+  created_at: string;
 }

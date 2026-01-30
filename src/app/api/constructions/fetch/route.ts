@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient();
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database nicht konfiguriert' }, { status: 500 });
+    }
+
     const results = {
       added: 0,
       updated: 0,
@@ -158,6 +163,10 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const supabase = createAdminClient();
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database nicht konfiguriert' }, { status: 500 });
+    }
 
     const { data: sources, error } = await supabase
       .from('construction_sources')

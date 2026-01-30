@@ -64,6 +64,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = createAdminClient();
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database nicht konfiguriert' }, { status: 500 });
+    }
+
     const body = await request.json();
 
     const {

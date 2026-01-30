@@ -22,6 +22,7 @@ export function ConstructionCard({ construction, isSelected, onSelect }: Constru
     planned: 'warning' as const,
     active: 'destructive' as const,
     completed: 'success' as const,
+    cancelled: 'secondary' as const,
   };
 
   const hasCoordinates = !!construction.coordinates;

@@ -53,7 +53,10 @@
       "Bash(ssh:*)",
       "Bash(wmic process:*)",
       "Bash(gh api:*)",
-      "mcp__n8n__n8n_test_workflow"
+      "mcp__n8n__n8n_test_workflow",
+      "Bash(PGPASSWORD=\"SgK6bEMidDTgym9m0JDb\" psql:*)",
+      "Bash(pm2 restart:*)",
+      "Bash(npx pm2:*)"
     ]
   }
 }

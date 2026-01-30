@@ -10,6 +10,10 @@ export async function GET(
     const { id } = await params;
     const supabase = createAdminClient();
 
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database nicht konfiguriert' }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('constructions')
       .select('*')
@@ -41,6 +45,11 @@ export async function PATCH(
   try {
     const { id } = await params;
     const supabase = createAdminClient();
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database nicht konfiguriert' }, { status: 500 });
+    }
+
     const body = await request.json();
 
     // Entferne Felder die nicht aktualisiert werden sollen
@@ -79,6 +88,10 @@ export async function DELETE(
   try {
     const { id } = await params;
     const supabase = createAdminClient();
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database nicht konfiguriert' }, { status: 500 });
+    }
 
     const { error } = await supabase
       .from('constructions')
