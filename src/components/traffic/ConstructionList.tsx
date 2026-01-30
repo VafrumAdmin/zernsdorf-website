@@ -4,14 +4,16 @@ import { useTranslations } from 'next-intl';
 import { ConstructionCard } from './ConstructionCard';
 import { Card, CardContent } from '@/components/ui';
 import type { Construction } from '@/types';
-import { Construction as ConstructionIcon, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 interface ConstructionListProps {
   constructions: Construction[];
   emptyMessage?: string;
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
 }
 
-export function ConstructionList({ constructions, emptyMessage }: ConstructionListProps) {
+export function ConstructionList({ constructions, emptyMessage, selectedId, onSelect }: ConstructionListProps) {
   const t = useTranslations('traffic');
 
   if (constructions.length === 0) {
@@ -28,7 +30,12 @@ export function ConstructionList({ constructions, emptyMessage }: ConstructionLi
   return (
     <div className="space-y-4">
       {constructions.map((construction) => (
-        <ConstructionCard key={construction.id} construction={construction} />
+        <ConstructionCard
+          key={construction.id}
+          construction={construction}
+          isSelected={selectedId === construction.id}
+          onSelect={onSelect ? () => onSelect(selectedId === construction.id ? null : construction.id) : undefined}
+        />
       ))}
     </div>
   );
