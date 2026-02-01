@@ -1,6 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 
+// Deterministische Shuffle-Funktion basierend auf Seed (Datum)
+// Sorgt dafür, dass die Reihenfolge jeden Tag wechselt, aber innerhalb eines Tages konsistent bleibt
+function seededShuffle<T>(array: T[], seed: number): T[] {
+  const result = [...array];
+
+  // Einfacher Pseudo-Zufallsgenerator (Mulberry32)
+  const mulberry32 = (s: number) => {
+    return () => {
+      s |= 0;
+      s = (s + 0x6d2b79f5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  const random = mulberry32(seed);
+
+  // Fisher-Yates Shuffle
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
+// Generiert einen Seed basierend auf dem aktuellen Datum (wechselt täglich)
+function getDailySeed(): number {
+  const now = new Date();
+  const dateString = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
+  // Einfache Hash-Funktion für String zu Zahl
+  let hash = 0;
+  for (let i = 0; i < dateString.length; i++) {
+    const char = dateString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
 // GET: Öffentliche API für Businesses (nur aktive Einträge)
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -50,11 +92,7 @@ export async function GET(request: NextRequest) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    // Sortierung
-    query = query
-      .order('name', { ascending: true })
-      .range(offset, offset + limit - 1);
-
+    // Keine Sortierung in der DB - wir shufflen auf Server-Seite für faire Rotation
     const { data, error, count } = await query;
 
     if (error) {
@@ -74,8 +112,23 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Tägliche Rotation: Featured/Recommended oben, Rest wird täglich neu gemischt
+    const featured = transformed.filter((b: Record<string, unknown>) => b.is_featured || b.is_recommended);
+    const regular = transformed.filter((b: Record<string, unknown>) => !b.is_featured && !b.is_recommended);
+
+    // Shuffle basierend auf dem heutigen Datum
+    const dailySeed = getDailySeed();
+    const shuffledRegular = seededShuffle(regular, dailySeed);
+
+    // Featured zuerst (auch geshuffled), dann der Rest
+    const shuffledFeatured = seededShuffle(featured, dailySeed);
+    const sortedBusinesses = [...shuffledFeatured, ...shuffledRegular];
+
+    // Pagination anwenden
+    const paginatedBusinesses = sortedBusinesses.slice(offset, offset + limit);
+
     return NextResponse.json({
-      businesses: transformed,
+      businesses: paginatedBusinesses,
       total: count || 0,
       source: 'database'
     });
