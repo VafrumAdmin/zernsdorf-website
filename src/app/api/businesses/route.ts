@@ -28,10 +28,12 @@ function seededShuffle<T>(array: T[], seed: number): T[] {
   return result;
 }
 
-// Generiert einen Seed basierend auf dem aktuellen Datum (wechselt täglich)
-function getDailySeed(): number {
+// Generiert einen Seed basierend auf 2-Stunden-Intervallen
+function getRotationSeed(): number {
   const now = new Date();
-  const dateString = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+  // 2-Stunden-Slot berechnen (0-11 pro Tag)
+  const twoHourSlot = Math.floor(now.getHours() / 2);
+  const dateString = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${twoHourSlot}`;
 
   // Einfache Hash-Funktion für String zu Zahl
   let hash = 0;
@@ -116,12 +118,12 @@ export async function GET(request: NextRequest) {
     const featured = transformed.filter((b: Record<string, unknown>) => b.is_featured || b.is_recommended);
     const regular = transformed.filter((b: Record<string, unknown>) => !b.is_featured && !b.is_recommended);
 
-    // Shuffle basierend auf dem heutigen Datum
-    const dailySeed = getDailySeed();
-    const shuffledRegular = seededShuffle(regular, dailySeed);
+    // Shuffle basierend auf 2-Stunden-Intervall
+    const rotationSeed = getRotationSeed();
+    const shuffledRegular = seededShuffle(regular, rotationSeed);
 
     // Featured zuerst (auch geshuffled), dann der Rest
-    const shuffledFeatured = seededShuffle(featured, dailySeed);
+    const shuffledFeatured = seededShuffle(featured, rotationSeed);
     const sortedBusinesses = [...shuffledFeatured, ...shuffledRegular];
 
     // Pagination anwenden
