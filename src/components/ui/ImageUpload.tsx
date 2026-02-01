@@ -124,7 +124,8 @@ export function ImageUpload({
           )}
           {!uploading && (
             <button
-              onClick={handleRemove}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemove(); }}
               className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition"
             >
               <X size={16} />
@@ -133,7 +134,9 @@ export function ImageUpload({
         </div>
       ) : (
         <button
-          onClick={() => inputRef.current?.click()}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); inputRef.current?.click(); }}
+          onMouseDown={(e) => e.stopPropagation()}
           disabled={uploading}
           className={`${isLogo ? 'w-32 h-32' : 'w-full aspect-video'} border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition flex flex-col items-center justify-center gap-2 text-slate-500`}
         >
@@ -265,7 +268,8 @@ export function MultiImageUpload({
           <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
             <img src={url} alt={`Bild ${index + 1}`} className="w-full h-full object-cover" />
             <button
-              onClick={() => handleRemove(index)}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemove(index); }}
               className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full shadow transition"
             >
               <X size={14} />
@@ -275,7 +279,9 @@ export function MultiImageUpload({
 
         {images.length < maxImages && (
           <button
-            onClick={() => inputRef.current?.click()}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); inputRef.current?.click(); }}
+            onMouseDown={(e) => e.stopPropagation()}
             disabled={uploading}
             className="aspect-square border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition flex flex-col items-center justify-center gap-1 text-slate-500"
           >
