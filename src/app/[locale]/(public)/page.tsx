@@ -813,23 +813,24 @@ export default function HomePage() {
                       className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition flex flex-col h-[200px] text-left group"
                     >
                       <div className="flex-1 min-h-0">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {/* Logo neben dem Namen */}
-                            {item.logo_url && (
-                              <img
-                                src={item.logo_url}
-                                alt={`${item.name} Logo`}
-                                className="w-8 h-8 object-contain rounded flex-shrink-0"
-                              />
-                            )}
-                            <h3 className="font-bold text-slate-800 truncate">{item.name}</h3>
-                            {item.is_featured && <Star className="w-4 h-4 text-amber-500 fill-amber-500 flex-shrink-0" />}
-                            {item.is_recommended && (
-                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded flex-shrink-0">EMPFOHLEN</span>
-                            )}
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-slate-100 bg-slate-50 px-2 py-0.5 rounded flex-shrink-0 ml-2">{item.type}</span>
+                        {/* Kategorie oben */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-slate-100 bg-slate-50 px-2 py-0.5 rounded">{item.type}</span>
+                          {item.is_featured && <Star className="w-4 h-4 text-amber-500 fill-amber-500" />}
+                          {item.is_recommended && (
+                            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">EMPFOHLEN</span>
+                          )}
+                        </div>
+                        {/* Logo und Name */}
+                        <div className="flex items-center gap-3 mb-2">
+                          {item.logo_url && (
+                            <img
+                              src={item.logo_url}
+                              alt={`${item.name} Logo`}
+                              className="w-11 h-11 object-contain rounded-lg bg-slate-50 p-1 flex-shrink-0"
+                            />
+                          )}
+                          <h3 className="font-bold text-slate-800 text-base leading-tight line-clamp-2">{item.name}</h3>
                         </div>
                         <p className="text-slate-500 text-sm line-clamp-2">{item.desc}</p>
                       </div>
