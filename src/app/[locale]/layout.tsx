@@ -10,6 +10,7 @@ import { Footer } from '@/components/layout';
 import { CookieConsent } from '@/components/cookie';
 import { UserPreferencesProvider } from '@/components/providers/UserPreferencesProvider';
 import { getMaintenanceStatus } from '@/lib/admin/maintenance';
+import { Analytics } from '@/components/Analytics';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -91,6 +92,7 @@ export default async function LocaleLayout({
               </div>
             )}
             <CookieConsent />
+            <Analytics />
           </UserPreferencesProvider>
         </NextIntlClientProvider>
       </body>

@@ -41,6 +41,12 @@ import {
   Check,
   Ban,
   FileText,
+  BarChart3,
+  Activity,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -54,10 +60,12 @@ import type {
   AdminDashboardStats,
   BusinessSuggestionWithCategory,
   ExtendedOpeningHours,
+  AnalyticsDashboardStats,
 } from '@/types/database';
 import { isExtendedOpeningHours } from '@/types/database';
 import { OpeningHoursEditor } from '@/components/OpeningHoursEditor';
 import { createEmptyOpeningHours } from '@/lib/opening-hours';
+import { ImageUpload, MultiImageUpload } from '@/components/ui/ImageUpload';
 
 // ============================================
 // INTERFACES
@@ -105,7 +113,7 @@ interface TestResult {
   hint?: string;
 }
 
-type TabType = 'dashboard' | 'directory' | 'suggestions' | 'traffic' | 'events' | 'maintenance' | 'waste';
+type TabType = 'dashboard' | 'directory' | 'suggestions' | 'traffic' | 'events' | 'maintenance' | 'waste' | 'statistics';
 
 // ============================================
 // MAIN COMPONENT
@@ -166,6 +174,11 @@ export default function AdminPage() {
   const [trafficLocations, setTrafficLocations] = useState<TrafficLocation[]>([]);
   const [trafficStatus, setTrafficStatus] = useState<TrafficStatusWithLocation[]>([]);
   const [trafficLoading, setTrafficLoading] = useState(false);
+
+  // Analytics State
+  const [analyticsStats, setAnalyticsStats] = useState<AnalyticsDashboardStats | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsTimeRange, setAnalyticsTimeRange] = useState<'7' | '14' | '30'>('30');
 
   // ============================================
   // DATA FETCHING
@@ -286,6 +299,21 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`/api/analytics/stats?days=${analyticsTimeRange}`);
+      const data = await res.json();
+      if (data.stats) {
+        setAnalyticsStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [analyticsTimeRange]);
+
   // Initial Load
   useEffect(() => {
     checkSession();
@@ -318,8 +346,11 @@ export default function AdminPage() {
       case 'traffic':
         fetchTraffic();
         break;
+      case 'statistics':
+        fetchAnalytics();
+        break;
     }
-  }, [activeTab, isAuthenticated, fetchBusinesses, fetchSuggestions, fetchEvents, fetchTraffic]);
+  }, [activeTab, isAuthenticated, fetchBusinesses, fetchSuggestions, fetchEvents, fetchTraffic, fetchAnalytics]);
 
   // ============================================
   // HANDLERS
@@ -611,6 +642,7 @@ export default function AdminPage() {
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'statistics', label: 'Statistiken', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'directory', label: 'Branchenverzeichnis', icon: <Building2 className="w-4 h-4" /> },
     { id: 'suggestions', label: 'Vorschläge', icon: <Inbox className="w-4 h-4" />, badge: stats?.suggestions_pending || 0 },
     { id: 'traffic', label: 'Verkehrsstatus', icon: <Car className="w-4 h-4" /> },
@@ -1395,6 +1427,277 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Statistiken Tab */}
+        {activeTab === 'statistics' && (
+          <div className="space-y-6">
+            {/* Header mit Zeitraumauswahl */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6 text-emerald-600" />
+                  Besucherstatistiken
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">DSGVO-konforme anonyme Besucheranalyse</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <select
+                  value={analyticsTimeRange}
+                  onChange={(e) => setAnalyticsTimeRange(e.target.value as '7' | '14' | '30')}
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                  <option value="7">Letzte 7 Tage</option>
+                  <option value="14">Letzte 14 Tage</option>
+                  <option value="30">Letzte 30 Tage</option>
+                </select>
+                <Button
+                  onClick={fetchAnalytics}
+                  disabled={analyticsLoading}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${analyticsLoading ? 'animate-spin' : ''}`} />
+                  Aktualisieren
+                </Button>
+              </div>
+            </div>
+
+            {analyticsLoading && !analyticsStats ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-600 border-t-transparent"></div>
+              </div>
+            ) : analyticsStats ? (
+              <>
+                {/* Echtzeit-Banner */}
+                <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl p-4 text-white flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Activity className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-emerald-100 text-sm">Echtzeit</p>
+                      <p className="text-2xl font-bold">{analyticsStats.realtime.activeVisitors} Besucher online</p>
+                    </div>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-4 text-emerald-100">
+                    <div className="flex items-center gap-1">
+                      <Monitor className="w-4 h-4" />
+                      <span className="text-sm">{analyticsStats.realtime.deviceBreakdown.desktop}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Smartphone className="w-4 h-4" />
+                      <span className="text-sm">{analyticsStats.realtime.deviceBreakdown.mobile}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Tablet className="w-4 h-4" />
+                      <span className="text-sm">{analyticsStats.realtime.deviceBreakdown.tablet}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Heute Stats Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Users className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-slate-900">{analyticsStats.today.visitors}</p>
+                        <p className="text-sm text-slate-500">Besucher heute</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-slate-900">{analyticsStats.today.newVisitors}</p>
+                        <p className="text-sm text-slate-500">Neue Besucher</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <Clock className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-slate-900">
+                          {Math.floor(analyticsStats.today.avgDuration / 60)}:{String(analyticsStats.today.avgDuration % 60).padStart(2, '0')}
+                        </p>
+                        <p className="text-sm text-slate-500">Verweildauer</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-100 rounded-lg">
+                        <ExternalLink className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-slate-900">{analyticsStats.today.bounceRate}%</p>
+                        <p className="text-sm text-slate-500">Bounce Rate</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Verlauf Chart */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                  <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-emerald-600" />
+                    Besucherverlauf (Letzte {analyticsTimeRange} Tage)
+                  </h3>
+                  <div className="h-64 flex items-end gap-1">
+                    {analyticsStats.history.map((day, index) => {
+                      const maxVisitors = Math.max(...analyticsStats.history.map(d => d.unique_visitors), 1);
+                      const height = (day.unique_visitors / maxVisitors) * 100;
+                      return (
+                        <div
+                          key={day.date}
+                          className="flex-1 flex flex-col items-center group"
+                        >
+                          <div
+                            className="w-full bg-emerald-500 hover:bg-emerald-600 rounded-t transition-all cursor-pointer relative"
+                            style={{ height: `${Math.max(height, 2)}%` }}
+                            title={`${new Date(day.date).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}: ${day.unique_visitors} Besucher`}
+                          >
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                              {day.unique_visitors}
+                            </div>
+                          </div>
+                          {index % Math.ceil(analyticsStats.history.length / 7) === 0 && (
+                            <p className="text-xs text-slate-400 mt-1">
+                              {new Date(day.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Top Seiten & Geräte */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Top Seiten */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      Meistbesuchte Seiten
+                    </h3>
+                    <div className="space-y-3">
+                      {analyticsStats.topPages.slice(0, 5).map((page, index) => (
+                        <div key={page.path} className="flex items-center gap-3">
+                          <span className="w-6 h-6 flex items-center justify-center bg-slate-100 rounded-full text-sm font-medium text-slate-600">
+                            {index + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 truncate">
+                              {page.title || page.path}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">{page.path}</p>
+                          </div>
+                          <span className="text-sm font-semibold text-slate-700">{page.views}</span>
+                        </div>
+                      ))}
+                      {analyticsStats.topPages.length === 0 && (
+                        <p className="text-sm text-slate-400 text-center py-4">Noch keine Daten</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Geräte */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <Monitor className="w-5 h-5 text-purple-600" />
+                      Geräteverteilung
+                    </h3>
+                    <div className="space-y-4">
+                      {(() => {
+                        const total = analyticsStats.deviceBreakdown.desktop + analyticsStats.deviceBreakdown.mobile + analyticsStats.deviceBreakdown.tablet;
+                        const desktopPercent = total > 0 ? Math.round((analyticsStats.deviceBreakdown.desktop / total) * 100) : 0;
+                        const mobilePercent = total > 0 ? Math.round((analyticsStats.deviceBreakdown.mobile / total) * 100) : 0;
+                        const tabletPercent = total > 0 ? Math.round((analyticsStats.deviceBreakdown.tablet / total) * 100) : 0;
+
+                        return (
+                          <>
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <Monitor className="w-4 h-4 text-slate-600" />
+                                  <span className="text-sm text-slate-700">Desktop</span>
+                                </div>
+                                <span className="text-sm font-semibold text-slate-900">{desktopPercent}%</span>
+                              </div>
+                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${desktopPercent}%` }} />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <Smartphone className="w-4 h-4 text-slate-600" />
+                                  <span className="text-sm text-slate-700">Mobile</span>
+                                </div>
+                                <span className="text-sm font-semibold text-slate-900">{mobilePercent}%</span>
+                              </div>
+                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${mobilePercent}%` }} />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <Tablet className="w-4 h-4 text-slate-600" />
+                                  <span className="text-sm text-slate-700">Tablet</span>
+                                </div>
+                                <span className="text-sm font-semibold text-slate-900">{tabletPercent}%</span>
+                              </div>
+                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-purple-500 rounded-full" style={{ width: `${tabletPercent}%` }} />
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Aktive Seiten */}
+                {analyticsStats.realtime.activePages.length > 0 && (
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-emerald-600" />
+                      Aktuell besuchte Seiten
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {analyticsStats.realtime.activePages.map((page) => (
+                        <span
+                          key={page}
+                          className="inline-flex items-center px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm"
+                        >
+                          {page}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+                <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-600 mb-2">Keine Statistiken verfügbar</p>
+                <p className="text-sm text-slate-400">
+                  Statistiken werden gesammelt, sobald Besucher die Website nutzen.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Müllabfuhr Tab */}
         {activeTab === 'waste' && config && (
           <div className="space-y-6">
@@ -1614,11 +1917,16 @@ function BusinessFormModal({
     phone: business?.phone || '',
     email: business?.email || '',
     website: business?.website || '',
+    has_whatsapp: business?.has_whatsapp ?? false,
+    has_telegram: business?.has_telegram ?? false,
+    has_signal: business?.has_signal ?? false,
     opening_hours: (hasStructuredHours ? business.opening_hours : createEmptyOpeningHours()) as ExtendedOpeningHours,
     opening_hours_text: business?.opening_hours_text || '',
     is_active: business?.is_active ?? true,
     is_featured: business?.is_featured ?? false,
     is_recommended: business?.is_recommended ?? false,
+    logo_url: business?.logo_url || '',
+    images: business?.images || [],
   });
   const [useStructuredHours, setUseStructuredHours] = useState(hasStructuredHours || !business?.opening_hours_text);
   const [isSaving, setIsSaving] = useState(false);
@@ -1636,6 +1944,8 @@ function BusinessFormModal({
         ...formData,
         opening_hours: useStructuredHours ? formData.opening_hours : null,
         opening_hours_text: !useStructuredHours ? formData.opening_hours_text : null,
+        logo_url: formData.logo_url || null,
+        images: formData.images.length > 0 ? formData.images : null,
       };
       const body = business ? { ...submitData, id: business.id } : submitData;
 
@@ -1798,6 +2108,84 @@ function BusinessFormModal({
                 placeholder="https://..."
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
               />
+            </div>
+
+            {/* Messenger Options */}
+            {formData.phone && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Erreichbar über Messenger
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.has_whatsapp}
+                      onChange={(e) => setFormData({ ...formData, has_whatsapp: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="flex items-center gap-1.5 text-sm text-slate-700">
+                      <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      WhatsApp
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.has_telegram}
+                      onChange={(e) => setFormData({ ...formData, has_telegram: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="flex items-center gap-1.5 text-sm text-slate-700">
+                      <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                      </svg>
+                      Telegram
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.has_signal}
+                      onChange={(e) => setFormData({ ...formData, has_signal: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                    />
+                    <span className="flex items-center gap-1.5 text-sm text-slate-700">
+                      <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 3.6c4.636 0 8.4 3.764 8.4 8.4 0 4.636-3.764 8.4-8.4 8.4-4.636 0-8.4-3.764-8.4-8.4 0-4.636 3.764-8.4 8.4-8.4zm0 2.4a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"/>
+                      </svg>
+                      Signal
+                    </span>
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Auf der angegebenen Telefonnummer erreichbar über diese Messenger.
+                </p>
+              </div>
+            )}
+
+            {/* Logo & Bilder */}
+            <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
+              <h3 className="text-sm font-medium text-slate-700 mb-3">Logo & Bilder</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ImageUpload
+                  type="logo"
+                  businessId={business?.id}
+                  currentImage={formData.logo_url || undefined}
+                  onUpload={(url) => setFormData({ ...formData, logo_url: url })}
+                  onRemove={() => setFormData({ ...formData, logo_url: '' })}
+                  label="Logo"
+                />
+                <MultiImageUpload
+                  businessId={business?.id}
+                  images={formData.images}
+                  onImagesChange={(images) => setFormData({ ...formData, images })}
+                  maxImages={5}
+                  label="Galeriebilder"
+                />
+              </div>
             </div>
 
             <div className="md:col-span-2">
@@ -2269,6 +2657,45 @@ function SuggestionDetailModal({
                 )}
               </div>
             </div>
+
+            {/* Logo & Bilder */}
+            {(suggestion.logo_url || (suggestion.pending_images && suggestion.pending_images.length > 0)) && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Hochgeladene Bilder</h3>
+                <div className="bg-slate-50 rounded-lg p-4">
+                  <div className="flex flex-wrap gap-4">
+                    {suggestion.logo_url && (
+                      <div>
+                        <label className="text-xs text-slate-500 block mb-1">Logo</label>
+                        <a href={suggestion.logo_url} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={suggestion.logo_url}
+                            alt="Logo"
+                            className="w-24 h-24 object-contain rounded-lg border border-slate-200 hover:border-slate-400 transition"
+                          />
+                        </a>
+                      </div>
+                    )}
+                    {suggestion.pending_images && suggestion.pending_images.length > 0 && (
+                      <div className="flex-1">
+                        <label className="text-xs text-slate-500 block mb-1">Galeriebilder ({suggestion.pending_images.length})</label>
+                        <div className="flex flex-wrap gap-2">
+                          {suggestion.pending_images.map((img, idx) => (
+                            <a key={idx} href={img} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={img}
+                                alt={`Bild ${idx + 1}`}
+                                className="w-20 h-20 object-cover rounded-lg border border-slate-200 hover:border-slate-400 transition"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Einreicher</h3>

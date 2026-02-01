@@ -646,6 +646,11 @@ export interface Business {
   email: string | null;
   website: string | null;
 
+  // Messenger
+  has_whatsapp: boolean;
+  has_telegram: boolean;
+  has_signal: boolean;
+
   // Öffnungszeiten
   opening_hours: OpeningHours | null;
   opening_hours_text: string | null;
@@ -757,11 +762,21 @@ export interface BusinessSuggestion {
   phone: string | null;
   email: string | null;
   website: string | null;
+
+  // Messenger
+  has_whatsapp: boolean;
+  has_telegram: boolean;
+  has_signal: boolean;
+
   opening_hours: OpeningHoursData | null;
   opening_hours_text: string | null;
   tags: string[] | null;
   latitude: number | null;
   longitude: number | null;
+
+  // Images
+  logo_url: string | null;
+  pending_images: string[] | null;
 
   // Suggestion-specific fields
   status: SuggestionStatus;
@@ -796,9 +811,19 @@ export interface BusinessSuggestionForm {
   phone?: string;
   email?: string;
   website?: string;
+
+  // Messenger
+  has_whatsapp?: boolean;
+  has_telegram?: boolean;
+  has_signal?: boolean;
+
   opening_hours?: OpeningHoursData;
   opening_hours_text?: string;
   tags?: string[];
+
+  // Images
+  logo_url?: string;
+  pending_images?: string[];
 
   // Submitter contact info
   submitted_by_name?: string;
@@ -1045,4 +1070,129 @@ export interface ConstructionSource {
   last_fetch_status: string | null;
   last_fetch_message: string | null;
   created_at: string;
+}
+
+// =====================================================
+// ANALYTICS SYSTEM TYPES
+// =====================================================
+
+export type DeviceType = 'desktop' | 'mobile' | 'tablet';
+
+// Besucher-Sessions
+export interface AnalyticsSession {
+  id: string;
+  visitor_id: string;
+  session_start: string;
+  session_end: string | null;
+  duration_seconds: number;
+  page_views: number;
+  referrer: string | null;
+  user_agent: string | null;
+  device_type: DeviceType | null;
+  country: string | null;
+  city: string | null;
+  is_returning: boolean;
+  created_at: string;
+}
+
+export interface AnalyticsSessionInsert extends Partial<Omit<AnalyticsSession, 'id' | 'created_at'>> {
+  visitor_id: string;
+}
+
+export interface AnalyticsSessionUpdate extends Partial<Omit<AnalyticsSession, 'id' | 'created_at' | 'visitor_id'>> {}
+
+// Seitenaufrufe
+export interface AnalyticsPageview {
+  id: string;
+  session_id: string | null;
+  visitor_id: string;
+  page_path: string;
+  page_title: string | null;
+  time_on_page: number;
+  scroll_depth: number;
+  created_at: string;
+}
+
+export interface AnalyticsPageviewInsert extends Partial<Omit<AnalyticsPageview, 'id' | 'created_at'>> {
+  visitor_id: string;
+  page_path: string;
+}
+
+// Tägliche Aggregate
+export interface TopPage {
+  path: string;
+  views: number;
+  title: string | null;
+}
+
+export interface DeviceBreakdown {
+  desktop: number;
+  mobile: number;
+  tablet: number;
+}
+
+export interface AnalyticsDaily {
+  id: string;
+  date: string;
+  unique_visitors: number;
+  returning_visitors: number;
+  new_visitors: number;
+  total_pageviews: number;
+  avg_session_duration: number;
+  bounce_rate: number;
+  top_pages: TopPage[] | null;
+  device_breakdown: DeviceBreakdown | null;
+  created_at: string;
+}
+
+// Echtzeit-Tracking
+export interface AnalyticsRealtime {
+  id: string;
+  visitor_id: string;
+  session_id: string | null;
+  current_page: string | null;
+  last_activity: string;
+  device_type: DeviceType | null;
+  created_at: string;
+}
+
+// Analytics Dashboard Stats
+export interface AnalyticsDashboardStats {
+  today: {
+    visitors: number;
+    newVisitors: number;
+    returningVisitors: number;
+    pageviews: number;
+    avgDuration: number;
+    bounceRate: number;
+  };
+  realtime: {
+    activeVisitors: number;
+    activePages: string[];
+    deviceBreakdown: DeviceBreakdown;
+  };
+  history: AnalyticsDaily[];
+  topPages: TopPage[];
+  deviceBreakdown: DeviceBreakdown;
+}
+
+// Track Event Request
+export interface TrackEventRequest {
+  type: 'pageview' | 'session_start' | 'session_end';
+  visitor_id: string;
+  session_id?: string;
+  page_path?: string;
+  page_title?: string;
+  referrer?: string;
+  user_agent?: string;
+  device_type?: DeviceType;
+  scroll_depth?: number;
+}
+
+// Heartbeat Request
+export interface HeartbeatRequest {
+  visitor_id: string;
+  session_id: string;
+  page_path: string;
+  scroll_depth?: number;
 }
