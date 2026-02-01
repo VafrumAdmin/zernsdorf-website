@@ -59,6 +59,7 @@ import type {
   TrafficStatusWithLocation,
   AdminDashboardStats,
   BusinessSuggestionWithCategory,
+  EventSuggestionWithBusinesses,
   ExtendedOpeningHours,
   AnalyticsDashboardStats,
 } from '@/types/database';
@@ -113,7 +114,7 @@ interface TestResult {
   hint?: string;
 }
 
-type TabType = 'dashboard' | 'directory' | 'suggestions' | 'traffic' | 'events' | 'maintenance' | 'waste' | 'statistics';
+type TabType = 'dashboard' | 'directory' | 'suggestions' | 'event-suggestions' | 'traffic' | 'events' | 'maintenance' | 'waste' | 'statistics';
 
 // ============================================
 // MAIN COMPONENT
@@ -164,11 +165,17 @@ export default function AdminPage() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
-  // Suggestions State
+  // Suggestions State (Business)
   const [suggestions, setSuggestions] = useState<BusinessSuggestionWithCategory[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [showSuggestionDetail, setShowSuggestionDetail] = useState(false);
   const [editingSuggestion, setEditingSuggestion] = useState<BusinessSuggestionWithCategory | null>(null);
+
+  // Event Suggestions State
+  const [eventSuggestions, setEventSuggestions] = useState<EventSuggestionWithBusinesses[]>([]);
+  const [eventSuggestionsLoading, setEventSuggestionsLoading] = useState(false);
+  const [showEventSuggestionDetail, setShowEventSuggestionDetail] = useState(false);
+  const [editingEventSuggestion, setEditingEventSuggestion] = useState<EventSuggestionWithBusinesses | null>(null);
 
   // Traffic State
   const [trafficLocations, setTrafficLocations] = useState<TrafficLocation[]>([]);
@@ -299,6 +306,19 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchEventSuggestions = useCallback(async () => {
+    setEventSuggestionsLoading(true);
+    try {
+      const res = await fetch('/api/admin/event-suggestions?status=pending');
+      const data = await res.json();
+      setEventSuggestions(data.suggestions || []);
+    } catch (error) {
+      console.error('Error fetching event suggestions:', error);
+    } finally {
+      setEventSuggestionsLoading(false);
+    }
+  }, []);
+
   const fetchAnalytics = useCallback(async () => {
     setAnalyticsLoading(true);
     try {
@@ -340,6 +360,9 @@ export default function AdminPage() {
       case 'suggestions':
         fetchSuggestions();
         break;
+      case 'event-suggestions':
+        fetchEventSuggestions();
+        break;
       case 'events':
         fetchEvents();
         break;
@@ -350,7 +373,7 @@ export default function AdminPage() {
         fetchAnalytics();
         break;
     }
-  }, [activeTab, isAuthenticated, fetchBusinesses, fetchSuggestions, fetchEvents, fetchTraffic, fetchAnalytics]);
+  }, [activeTab, isAuthenticated, fetchBusinesses, fetchSuggestions, fetchEventSuggestions, fetchEvents, fetchTraffic, fetchAnalytics]);
 
   // ============================================
   // HANDLERS
@@ -636,6 +659,60 @@ export default function AdminPage() {
     }
   };
 
+  // Event Suggestion Handlers
+  const approveEventSuggestion = async (id: string) => {
+    if (!confirm('Diese Veranstaltung freigeben und in den Kalender übernehmen?')) return;
+
+    try {
+      const res = await fetch('/api/admin/event-suggestions/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        alert('Veranstaltung wurde freigegeben!');
+        fetchEventSuggestions();
+        fetchStats();
+        setShowEventSuggestionDetail(false);
+        setEditingEventSuggestion(null);
+      } else {
+        alert(`Fehler: ${data.error || 'Unbekannter Fehler'}`);
+      }
+    } catch (error) {
+      console.error('Error approving event suggestion:', error);
+      alert('Fehler beim Freigeben des Vorschlags');
+    }
+  };
+
+  const rejectEventSuggestion = async (id: string) => {
+    if (!confirm('Diesen Veranstaltungsvorschlag ablehnen?')) return;
+
+    try {
+      const res = await fetch('/api/admin/event-suggestions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, reject: true }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        fetchEventSuggestions();
+        fetchStats();
+        setShowEventSuggestionDetail(false);
+        setEditingEventSuggestion(null);
+      } else {
+        alert(`Fehler: ${data.error || 'Unbekannter Fehler'}`);
+      }
+    } catch (error) {
+      console.error('Error rejecting event suggestion:', error);
+      alert('Fehler beim Ablehnen des Vorschlags');
+    }
+  };
+
   // ============================================
   // RENDER HELPERS
   // ============================================
@@ -645,6 +722,7 @@ export default function AdminPage() {
     { id: 'statistics', label: 'Statistiken', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'directory', label: 'Branchenverzeichnis', icon: <Building2 className="w-4 h-4" /> },
     { id: 'suggestions', label: 'Vorschläge', icon: <Inbox className="w-4 h-4" />, badge: stats?.suggestions_pending || 0 },
+    { id: 'event-suggestions', label: 'Event-Vorschläge', icon: <Calendar className="w-4 h-4" />, badge: eventSuggestions.length },
     { id: 'traffic', label: 'Verkehrsstatus', icon: <Car className="w-4 h-4" /> },
     { id: 'events', label: 'Events', icon: <Calendar className="w-4 h-4" /> },
     { id: 'maintenance', label: 'Wartungsmodus', icon: <Wrench className="w-4 h-4" /> },
@@ -1200,6 +1278,264 @@ export default function AdminPage() {
                 onApprove={() => approveSuggestion(editingSuggestion.id)}
                 onReject={() => rejectSuggestion(editingSuggestion.id)}
               />
+            )}
+          </div>
+        )}
+
+        {/* Event Suggestions Tab */}
+        {activeTab === 'event-suggestions' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-slate-900">Event-Vorschläge</h3>
+                <p className="text-sm text-slate-500">Öffentlich eingereichte Vorschläge für den Veranstaltungskalender</p>
+              </div>
+            </div>
+
+            {eventSuggestionsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-600 border-t-transparent"></div>
+              </div>
+            ) : eventSuggestions.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+                <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-600 mb-2">Keine ausstehenden Event-Vorschläge</p>
+                <p className="text-sm text-slate-400">
+                  Neue Veranstaltungsvorschläge werden hier angezeigt, sobald sie eingereicht werden.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {eventSuggestions.map((suggestion) => {
+                  const categoryIcons: Record<string, string> = {
+                    festival: '🎉', market: '🛒', culture: '🎭', sports: '⚽',
+                    community: '🤝', course: '📚', workshop: '🔧', official: '🏛️',
+                    general: '📅', other: '📌'
+                  };
+                  const categoryColors: Record<string, string> = {
+                    festival: '#9333ea', market: '#22c55e', culture: '#3b82f6', sports: '#f97316',
+                    community: '#ec4899', course: '#14b8a6', workshop: '#f59e0b', official: '#4b5563',
+                    general: '#6b7280', other: '#64748b'
+                  };
+
+                  return (
+                    <div
+                      key={suggestion.id}
+                      className="bg-white rounded-xl border border-slate-200 p-4 hover:border-purple-300 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xl">{categoryIcons[suggestion.category] || '📅'}</span>
+                            <h4 className="font-medium text-slate-900">{suggestion.title}</h4>
+                            <span
+                              className="px-2 py-0.5 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${categoryColors[suggestion.category] || '#6b7280'}20`,
+                                color: categoryColors[suggestion.category] || '#6b7280',
+                              }}
+                            >
+                              {suggestion.category}
+                            </span>
+                            {suggestion.is_recurring && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
+                                Wiederkehrend
+                              </span>
+                            )}
+                          </div>
+                          {suggestion.description && (
+                            <p className="text-sm text-slate-500 mb-2 line-clamp-2">{suggestion.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(suggestion.start_date).toLocaleDateString('de-DE')}
+                              {suggestion.start_time && `, ${suggestion.start_time.substring(0, 5)}`}
+                            </span>
+                            {(suggestion.location_name || suggestion.location_business_name) && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {suggestion.location_business_name || suggestion.location_name}
+                              </span>
+                            )}
+                            {(suggestion.organizer_name || suggestion.organizer_business_name) && (
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {suggestion.organizer_business_name || suggestion.organizer_name}
+                              </span>
+                            )}
+                            {suggestion.submitted_by_name && (
+                              <span className="flex items-center gap-1 text-slate-300">
+                                von {suggestion.submitted_by_name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => { setEditingEventSuggestion(suggestion); setShowEventSuggestionDetail(true); }}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Details anzeigen"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => approveEventSuggestion(suggestion.id)}
+                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Freigeben"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => rejectEventSuggestion(suggestion.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Ablehnen"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Event Suggestion Detail Modal */}
+            {showEventSuggestionDetail && editingEventSuggestion && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900">Event-Vorschlag Details</h3>
+                    <button
+                      onClick={() => { setShowEventSuggestionDetail(false); setEditingEventSuggestion(null); }}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    {/* Basic Info */}
+                    <div>
+                      <h4 className="font-medium text-slate-700 mb-3">Grundinformationen</h4>
+                      <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                        <p><strong>Titel:</strong> {editingEventSuggestion.title}</p>
+                        <p><strong>Kategorie:</strong> {editingEventSuggestion.category}</p>
+                        <p><strong>Typ:</strong> {editingEventSuggestion.event_type === 'recurring' ? 'Wiederkehrend' : 'Einmalig'}</p>
+                        {editingEventSuggestion.description && (
+                          <p><strong>Beschreibung:</strong> {editingEventSuggestion.description}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Date & Time */}
+                    <div>
+                      <h4 className="font-medium text-slate-700 mb-3">Datum & Zeit</h4>
+                      <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                        <p><strong>Startdatum:</strong> {new Date(editingEventSuggestion.start_date).toLocaleDateString('de-DE')}</p>
+                        {editingEventSuggestion.start_time && <p><strong>Startzeit:</strong> {editingEventSuggestion.start_time}</p>}
+                        {editingEventSuggestion.end_date && <p><strong>Enddatum:</strong> {new Date(editingEventSuggestion.end_date).toLocaleDateString('de-DE')}</p>}
+                        {editingEventSuggestion.end_time && <p><strong>Endzeit:</strong> {editingEventSuggestion.end_time}</p>}
+                        {editingEventSuggestion.is_all_day && <p><strong>Ganztägig:</strong> Ja</p>}
+                        {editingEventSuggestion.is_recurring && editingEventSuggestion.recurrence_rule && (
+                          <p><strong>Wiederholung:</strong> {editingEventSuggestion.recurrence_rule}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <h4 className="font-medium text-slate-700 mb-3">Veranstaltungsort</h4>
+                      <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                        {editingEventSuggestion.location_business_name ? (
+                          <>
+                            <p><strong>Aus Verzeichnis:</strong> {editingEventSuggestion.location_business_name}</p>
+                            {editingEventSuggestion.location_business_street && (
+                              <p><strong>Adresse:</strong> {editingEventSuggestion.location_business_street} {editingEventSuggestion.location_business_house_number}, {editingEventSuggestion.location_business_postal_code} {editingEventSuggestion.location_business_city}</p>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {editingEventSuggestion.location_name && <p><strong>Ort:</strong> {editingEventSuggestion.location_name}</p>}
+                            {editingEventSuggestion.location_address && <p><strong>Adresse:</strong> {editingEventSuggestion.location_address}</p>}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Organizer */}
+                    <div>
+                      <h4 className="font-medium text-slate-700 mb-3">Veranstalter</h4>
+                      <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                        {editingEventSuggestion.organizer_business_name ? (
+                          <>
+                            <p><strong>Aus Verzeichnis:</strong> {editingEventSuggestion.organizer_business_name}</p>
+                            {editingEventSuggestion.organizer_business_email && <p><strong>E-Mail:</strong> {editingEventSuggestion.organizer_business_email}</p>}
+                            {editingEventSuggestion.organizer_business_phone && <p><strong>Telefon:</strong> {editingEventSuggestion.organizer_business_phone}</p>}
+                          </>
+                        ) : (
+                          <>
+                            {editingEventSuggestion.organizer_name && <p><strong>Name:</strong> {editingEventSuggestion.organizer_name}</p>}
+                            {editingEventSuggestion.organizer_contact_email && <p><strong>E-Mail:</strong> {editingEventSuggestion.organizer_contact_email}</p>}
+                            {editingEventSuggestion.organizer_contact_phone && <p><strong>Telefon:</strong> {editingEventSuggestion.organizer_contact_phone}</p>}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Images */}
+                    {(editingEventSuggestion.image_url || (editingEventSuggestion.images && editingEventSuggestion.images.length > 0)) && (
+                      <div>
+                        <h4 className="font-medium text-slate-700 mb-3">Bilder</h4>
+                        <div className="flex gap-4 flex-wrap">
+                          {editingEventSuggestion.image_url && (
+                            <img src={editingEventSuggestion.image_url} alt="Hauptbild" className="w-32 h-32 object-cover rounded-lg" />
+                          )}
+                          {editingEventSuggestion.images?.map((img, i) => (
+                            <img key={i} src={img} alt={`Bild ${i + 1}`} className="w-32 h-32 object-cover rounded-lg" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Submitter Info */}
+                    {(editingEventSuggestion.submitted_by_name || editingEventSuggestion.submitted_by_email) && (
+                      <div>
+                        <h4 className="font-medium text-slate-700 mb-3">Eingereicht von</h4>
+                        <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                          {editingEventSuggestion.submitted_by_name && <p><strong>Name:</strong> {editingEventSuggestion.submitted_by_name}</p>}
+                          {editingEventSuggestion.submitted_by_email && <p><strong>E-Mail:</strong> {editingEventSuggestion.submitted_by_email}</p>}
+                          <p><strong>Eingereicht am:</strong> {new Date(editingEventSuggestion.created_at).toLocaleString('de-DE')}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+                    <button
+                      onClick={() => { setShowEventSuggestionDetail(false); setEditingEventSuggestion(null); }}
+                      className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      Schließen
+                    </button>
+                    <button
+                      onClick={() => rejectEventSuggestion(editingEventSuggestion.id)}
+                      className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <Ban className="w-4 h-4" />
+                      Ablehnen
+                    </button>
+                    <button
+                      onClick={() => approveEventSuggestion(editingEventSuggestion.id)}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Freigeben
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}

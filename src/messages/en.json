@@ -22,6 +22,7 @@
     "traffic": "Traffic & Construction",
     "events": "Events",
     "history": "History",
+    "learning": "Learning",
     "settings": "Settings",
     "login": "Login",
     "logout": "Logout",
@@ -90,19 +91,53 @@
     "upcoming": "Upcoming Events",
     "past": "Past Events",
     "noEvents": "No events found",
+    "calendar": "Calendar",
+    "list": "List",
+    "suggestEvent": "Suggest Event",
+    "highlight": "Highlight",
+    "moreCalendars": "More Event Calendars",
+    "close": "Close",
+    "today": "Today",
+    "previousMonth": "Previous Month",
+    "nextMonth": "Next Month",
+    "selectDate": "Select Date",
+    "clickOnDay": "Click on a day to view events",
+    "noEventsOnDay": "No events on this day",
+    "allDay": "All Day",
+    "recurring": "Recurring",
     "categories": {
+      "general": "General",
       "festival": "Festival",
       "market": "Market",
       "culture": "Culture",
       "sports": "Sports",
       "community": "Community",
-      "politics": "Politics",
+      "official": "Official",
+      "course": "Course",
+      "workshop": "Workshop",
       "other": "Other"
     },
     "when": "When",
     "where": "Where",
     "organizer": "Organizer",
-    "moreInfo": "Learn more"
+    "moreInfo": "Learn more",
+    "recurrence": {
+      "title": "Recurrence",
+      "frequency": "Frequency",
+      "weekly": "Weekly",
+      "biweekly": "Every 2 Weeks",
+      "monthly": "Monthly",
+      "weekdays": "On these days",
+      "weekdaysHint": "Select the days the course takes place",
+      "endDate": "Ends on",
+      "endDateHint": "Leave empty for unlimited recurrence",
+      "preview": "Preview",
+      "previewWeekly": "Every week",
+      "previewBiweekly": "Every 2 weeks",
+      "previewMonthly": "Monthly on the same day",
+      "selectWeekdays": "Please select at least one day",
+      "until": "until"
+    }
   },
   "history": {
     "title": "History of Zernsdorf",
@@ -156,5 +191,85 @@
     "imprint": "Imprint",
     "privacy": "Privacy",
     "madeWith": "Made with ❤️ for Zernsdorf"
+  },
+  "learning": {
+    "title": "Zernsdorf Learning",
+    "subtitle": "Free learning platform for students of all grade levels - following Brandenburg curriculum",
+    "selectGrade": "Choose your grade level",
+    "selectGradeDescription": "Select your grade level to find suitable learning content.",
+    "backToGrades": "Back to overview",
+    "availableSubjects": "Available subjects",
+    "comingSoon": "Coming soon",
+    "subjectsAvailable": "{count} subjects available",
+    "modulesCount": "{count} modules",
+    "topicsCount": "{count} topics",
+    "grades": {
+      "grundschule": "Elementary School",
+      "sekundarstufe1": "Middle School",
+      "sekundarstufe2": "High School"
+    },
+    "subjects": {
+      "mathematik": "Mathematics",
+      "deutsch": "German",
+      "englisch": "English",
+      "sachunterricht": "General Studies",
+      "biologie": "Biology",
+      "chemie": "Chemistry",
+      "physik": "Physics",
+      "geschichte": "History",
+      "geografie": "Geography",
+      "politik": "Politics",
+      "kunst": "Art",
+      "musik": "Music",
+      "informatik": "Computer Science"
+    },
+    "unitTypes": {
+      "video": "Video",
+      "exercise": "Exercise",
+      "quiz": "Quiz",
+      "text": "Reading",
+      "infographic": "Infographic"
+    },
+    "progress": {
+      "title": "Your Progress",
+      "completed": "Completed",
+      "inProgress": "In Progress",
+      "notStarted": "Not Started",
+      "percentage": "{percent}% completed"
+    },
+    "gamification": {
+      "xp": "XP",
+      "level": "Level",
+      "streak": "Day Streak",
+      "coins": "Coins",
+      "badges": "Badges",
+      "achievements": "Achievements",
+      "leaderboard": "Leaderboard",
+      "earnedXP": "+{amount} XP earned!",
+      "levelUp": "Level Up! You are now Level {level}!",
+      "newBadge": "New badge unlocked!",
+      "streakBonus": "Streak Bonus: +{amount} XP!"
+    },
+    "exercises": {
+      "checkAnswer": "Check Answer",
+      "nextQuestion": "Next Question",
+      "showHint": "Show Hint",
+      "correct": "Correct!",
+      "incorrect": "Incorrect",
+      "tryAgain": "Try Again",
+      "completed": "Exercise completed!",
+      "score": "{correct} of {total} correct"
+    },
+    "video": {
+      "watchVideo": "Watch Video",
+      "markAsWatched": "Mark as Watched",
+      "transcript": "Transcript"
+    },
+    "cta": {
+      "startLearning": "Start Learning",
+      "continueModule": "Continue Learning",
+      "startModule": "Start Module",
+      "completeModule": "Complete Module"
+    }
   }
 }

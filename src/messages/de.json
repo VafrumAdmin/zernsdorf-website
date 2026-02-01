@@ -22,6 +22,7 @@
     "traffic": "Verkehr & Baustellen",
     "events": "Veranstaltungen",
     "history": "Geschichte",
+    "learning": "Lernen",
     "settings": "Einstellungen",
     "login": "Anmelden",
     "logout": "Abmelden",
@@ -90,19 +91,53 @@
     "upcoming": "Kommende Veranstaltungen",
     "past": "Vergangene Veranstaltungen",
     "noEvents": "Keine Veranstaltungen gefunden",
+    "calendar": "Kalender",
+    "list": "Liste",
+    "suggestEvent": "Event vorschlagen",
+    "highlight": "Highlight",
+    "moreCalendars": "Weitere Veranstaltungskalender",
+    "close": "Schließen",
+    "today": "Heute",
+    "previousMonth": "Vorheriger Monat",
+    "nextMonth": "Nächster Monat",
+    "selectDate": "Datum auswählen",
+    "clickOnDay": "Klicken Sie auf einen Tag, um Events anzuzeigen",
+    "noEventsOnDay": "Keine Veranstaltungen an diesem Tag",
+    "allDay": "Ganztägig",
+    "recurring": "Wiederkehrend",
     "categories": {
+      "general": "Allgemein",
       "festival": "Fest",
       "market": "Markt",
       "culture": "Kultur",
       "sports": "Sport",
       "community": "Gemeinde",
-      "politics": "Politik",
+      "official": "Amtlich",
+      "course": "Kurs",
+      "workshop": "Workshop",
       "other": "Sonstiges"
     },
     "when": "Wann",
     "where": "Wo",
     "organizer": "Veranstalter",
-    "moreInfo": "Mehr erfahren"
+    "moreInfo": "Mehr erfahren",
+    "recurrence": {
+      "title": "Wiederholung",
+      "frequency": "Frequenz",
+      "weekly": "Wöchentlich",
+      "biweekly": "Alle 2 Wochen",
+      "monthly": "Monatlich",
+      "weekdays": "An diesen Tagen",
+      "weekdaysHint": "Wählen Sie die Tage, an denen der Kurs stattfindet",
+      "endDate": "Endet am",
+      "endDateHint": "Leer lassen für unbegrenzte Wiederholung",
+      "preview": "Vorschau",
+      "previewWeekly": "Jede Woche",
+      "previewBiweekly": "Alle 2 Wochen",
+      "previewMonthly": "Monatlich am gleichen Tag",
+      "selectWeekdays": "Bitte wählen Sie mindestens einen Tag",
+      "until": "bis"
+    }
   },
   "history": {
     "title": "Geschichte von Zernsdorf",
@@ -156,5 +191,85 @@
     "imprint": "Impressum",
     "privacy": "Datenschutz",
     "madeWith": "Gemacht mit ❤️ für Zernsdorf"
+  },
+  "learning": {
+    "title": "Zernsdorf Lernen",
+    "subtitle": "Kostenlose Lernplattform für Schüler aller Klassenstufen - nach Brandenburg-Lehrplan",
+    "selectGrade": "Wähle deine Klassenstufe",
+    "selectGradeDescription": "Wähle deine Klassenstufe aus, um passende Lerninhalte zu finden.",
+    "backToGrades": "Zurück zur Übersicht",
+    "availableSubjects": "Verfügbare Fächer",
+    "comingSoon": "Bald verfügbar",
+    "subjectsAvailable": "{count} Fächer verfügbar",
+    "modulesCount": "{count} Module",
+    "topicsCount": "{count} Themen",
+    "grades": {
+      "grundschule": "Grundschule",
+      "sekundarstufe1": "Sekundarstufe I",
+      "sekundarstufe2": "Sekundarstufe II"
+    },
+    "subjects": {
+      "mathematik": "Mathematik",
+      "deutsch": "Deutsch",
+      "englisch": "Englisch",
+      "sachunterricht": "Sachunterricht",
+      "biologie": "Biologie",
+      "chemie": "Chemie",
+      "physik": "Physik",
+      "geschichte": "Geschichte",
+      "geografie": "Geografie",
+      "politik": "Politik",
+      "kunst": "Kunst",
+      "musik": "Musik",
+      "informatik": "Informatik"
+    },
+    "unitTypes": {
+      "video": "Video",
+      "exercise": "Übung",
+      "quiz": "Quiz",
+      "text": "Lesen",
+      "infographic": "Infografik"
+    },
+    "progress": {
+      "title": "Dein Fortschritt",
+      "completed": "Abgeschlossen",
+      "inProgress": "In Bearbeitung",
+      "notStarted": "Nicht begonnen",
+      "percentage": "{percent}% abgeschlossen"
+    },
+    "gamification": {
+      "xp": "XP",
+      "level": "Level",
+      "streak": "Tage Serie",
+      "coins": "Münzen",
+      "badges": "Abzeichen",
+      "achievements": "Erfolge",
+      "leaderboard": "Rangliste",
+      "earnedXP": "+{amount} XP verdient!",
+      "levelUp": "Level Up! Du bist jetzt Level {level}!",
+      "newBadge": "Neues Abzeichen freigeschaltet!",
+      "streakBonus": "Streak-Bonus: +{amount} XP!"
+    },
+    "exercises": {
+      "checkAnswer": "Antwort prüfen",
+      "nextQuestion": "Nächste Frage",
+      "showHint": "Tipp anzeigen",
+      "correct": "Richtig!",
+      "incorrect": "Leider falsch",
+      "tryAgain": "Nochmal versuchen",
+      "completed": "Übung abgeschlossen!",
+      "score": "{correct} von {total} richtig"
+    },
+    "video": {
+      "watchVideo": "Video ansehen",
+      "markAsWatched": "Als gesehen markieren",
+      "transcript": "Transkript"
+    },
+    "cta": {
+      "startLearning": "Jetzt lernen",
+      "continueModule": "Weiter lernen",
+      "startModule": "Modul starten",
+      "completeModule": "Modul abschließen"
+    }
   }
 }

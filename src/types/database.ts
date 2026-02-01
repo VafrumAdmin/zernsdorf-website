@@ -884,7 +884,9 @@ export interface TrafficStatusInsert extends Partial<Omit<TrafficStatus, 'id' | 
 }
 
 // Events
-export type EventCategory = 'general' | 'festival' | 'market' | 'sports' | 'culture' | 'community' | 'official';
+export type EventCategory = 'general' | 'festival' | 'market' | 'sports' | 'culture' | 'community' | 'official' | 'course' | 'workshop' | 'other';
+export type EventType = 'single' | 'recurring';
+export type EventSuggestionStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Event {
   id: string;
@@ -903,15 +905,18 @@ export interface Event {
   // Ort
   location_name: string | null;
   location_address: string | null;
+  location_business_id: string | null;
   latitude: number | null;
   longitude: number | null;
 
   // Kategorisierung
   category: EventCategory;
+  event_type: EventType;
 
   // Veranstalter
   organizer_name: string | null;
   organizer_id: string | null;
+  organizer_business_id: string | null;
   group_id: string | null;
 
   // Kontakt
@@ -928,6 +933,7 @@ export interface Event {
   is_featured: boolean;
   is_recurring: boolean;
   recurrence_rule: string | null;
+  recurrence_end_date: string | null;
 
   // Teilnahme
   requires_registration: boolean;
@@ -947,6 +953,143 @@ export interface EventInsert extends Partial<Omit<Event, 'id' | 'slug' | 'create
 }
 
 export interface EventUpdate extends Partial<Omit<Event, 'id' | 'created_at'>> {}
+
+// =====================================================
+// EVENT SUGGESTIONS
+// =====================================================
+
+export interface EventSuggestion {
+  id: string;
+
+  // Event-Grunddaten
+  title: string;
+  description: string | null;
+  description_en: string | null;
+  event_type: EventType;
+  category: EventCategory;
+
+  // Datum & Zeit
+  start_date: string;
+  start_time: string | null;
+  end_date: string | null;
+  end_time: string | null;
+  is_all_day: boolean;
+
+  // Wiederholung (für Kurse)
+  is_recurring: boolean;
+  recurrence_rule: string | null;
+  recurrence_end_date: string | null;
+
+  // Ort (Freitext ODER Business-Verknüpfung)
+  location_name: string | null;
+  location_address: string | null;
+  location_business_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
+
+  // Veranstalter (Freitext ODER Business-Verknüpfung)
+  organizer_name: string | null;
+  organizer_contact_email: string | null;
+  organizer_contact_phone: string | null;
+  organizer_business_id: string | null;
+
+  // Bilder
+  image_url: string | null;
+  images: string[] | null;
+
+  // Kontakt & Links
+  website: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+
+  // Teilnahme
+  requires_registration: boolean;
+  max_participants: number | null;
+  registration_url: string | null;
+
+  // Vorschlag-Status
+  status: EventSuggestionStatus;
+  submitted_by_name: string | null;
+  submitted_by_email: string | null;
+  submitted_by_phone: string | null;
+  admin_notes: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventSuggestionWithBusinesses extends EventSuggestion {
+  // Location Business
+  location_business_name: string | null;
+  location_business_street: string | null;
+  location_business_house_number: string | null;
+  location_business_postal_code: string | null;
+  location_business_city: string | null;
+  location_business_phone: string | null;
+  location_business_email: string | null;
+  // Organizer Business
+  organizer_business_name: string | null;
+  organizer_business_phone: string | null;
+  organizer_business_email: string | null;
+  organizer_business_website: string | null;
+}
+
+export interface EventSuggestionForm {
+  title: string;
+  description?: string;
+  event_type?: EventType;
+  category?: EventCategory;
+
+  // Datum & Zeit
+  start_date: string;
+  start_time?: string;
+  end_date?: string;
+  end_time?: string;
+  is_all_day?: boolean;
+
+  // Wiederholung
+  is_recurring?: boolean;
+  recurrence_rule?: string;
+  recurrence_end_date?: string;
+
+  // Ort
+  location_name?: string;
+  location_address?: string;
+  location_business_id?: string;
+
+  // Veranstalter
+  organizer_name?: string;
+  organizer_contact_email?: string;
+  organizer_contact_phone?: string;
+  organizer_business_id?: string;
+
+  // Bilder
+  image_url?: string;
+  images?: string[];
+
+  // Kontakt
+  website?: string;
+
+  // Teilnahme
+  requires_registration?: boolean;
+  max_participants?: number;
+  registration_url?: string;
+
+  // Einreicher
+  submitted_by_name?: string;
+  submitted_by_email?: string;
+  submitted_by_phone?: string;
+}
+
+export interface EventSuggestionInsert extends Partial<Omit<EventSuggestion, 'id' | 'created_at' | 'updated_at' | 'reviewed_at' | 'reviewed_by'>> {
+  title: string;
+  start_date: string;
+}
+
+export interface EventSuggestionUpdate extends Partial<Omit<EventSuggestion, 'id' | 'created_at'>> {}
 
 // Admin Settings
 export interface AdminSettings {
