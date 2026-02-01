@@ -810,7 +810,7 @@ export default function HomePage() {
                     <button
                       key={item.id || idx}
                       onClick={() => setSelectedBusiness(item)}
-                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition flex flex-col h-[210px] text-left group overflow-hidden"
+                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition flex flex-col h-[240px] text-left group overflow-hidden"
                     >
                       <div className="flex-1 min-h-0 overflow-hidden">
                         {/* Kategorie oben */}
@@ -832,7 +832,7 @@ export default function HomePage() {
                           )}
                           <h3 className={`font-bold text-slate-800 leading-tight ${item.logo_url ? 'line-clamp-2 text-sm' : 'line-clamp-2 text-base'}`}>{item.name}</h3>
                         </div>
-                        <p className={`text-slate-500 text-sm ${item.logo_url ? 'line-clamp-1' : 'line-clamp-2'}`}>{item.desc}</p>
+                        <p className="text-slate-500 text-sm line-clamp-2">{item.desc}</p>
                       </div>
                       {/* Kontaktinfos - kompakt */}
                       <div className="mt-auto pt-3 border-t border-slate-100 flex flex-wrap gap-3 text-sm">
