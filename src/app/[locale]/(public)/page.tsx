@@ -810,11 +810,11 @@ export default function HomePage() {
                     <button
                       key={item.id || idx}
                       onClick={() => setSelectedBusiness(item)}
-                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition flex flex-col h-[200px] text-left group"
+                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition flex flex-col h-[210px] text-left group overflow-hidden"
                     >
-                      <div className="flex-1 min-h-0">
+                      <div className="flex-1 min-h-0 overflow-hidden">
                         {/* Kategorie oben */}
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-1.5">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-slate-100 bg-slate-50 px-2 py-0.5 rounded">{item.type}</span>
                           {item.is_featured && <Star className="w-4 h-4 text-amber-500 fill-amber-500" />}
                           {item.is_recommended && (
@@ -822,17 +822,17 @@ export default function HomePage() {
                           )}
                         </div>
                         {/* Logo und Name */}
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-start gap-2.5 mb-1.5">
                           {item.logo_url && (
                             <img
                               src={item.logo_url}
                               alt={`${item.name} Logo`}
-                              className="w-11 h-11 object-contain rounded-lg bg-slate-50 p-1 flex-shrink-0"
+                              className="w-10 h-10 object-contain rounded-lg bg-slate-50 p-0.5 flex-shrink-0"
                             />
                           )}
-                          <h3 className="font-bold text-slate-800 text-base leading-tight line-clamp-2">{item.name}</h3>
+                          <h3 className={`font-bold text-slate-800 leading-tight ${item.logo_url ? 'line-clamp-2 text-sm' : 'line-clamp-2 text-base'}`}>{item.name}</h3>
                         </div>
-                        <p className="text-slate-500 text-sm line-clamp-2">{item.desc}</p>
+                        <p className={`text-slate-500 text-sm ${item.logo_url ? 'line-clamp-1' : 'line-clamp-2'}`}>{item.desc}</p>
                       </div>
                       {/* Kontaktinfos - kompakt */}
                       <div className="mt-auto pt-3 border-t border-slate-100 flex flex-wrap gap-3 text-sm">
