@@ -9,7 +9,7 @@ export function Footer() {
   const { theme } = useTheme();
 
   return (
-    <footer className="bg-slate-900 text-slate-300">
+    <footer className="bg-slate-900 text-slate-300" role="contentinfo">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Brand */}
@@ -20,31 +20,35 @@ export function Footer() {
               </div>
               <span className="text-lg font-bold text-white">ZernsdorfConnect</span>
             </Link>
-            <p className="text-sm text-slate-400 mb-4">
+            <p className="text-sm text-slate-300 mb-4">
               Ihr digitales Tor zu allem, was in Zernsdorf wichtig ist.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" role="list" aria-label="Social Media Links">
               <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                aria-label="Besuchen Sie uns auf Facebook (öffnet in neuem Tab)"
+                role="listitem"
               >
-                <Facebook className="w-4 h-4" />
+                <Facebook className="w-4 h-4" aria-hidden="true" />
               </a>
               <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                aria-label="Besuchen Sie uns auf Instagram (öffnet in neuem Tab)"
+                role="listitem"
               >
-                <Instagram className="w-4 h-4" />
+                <Instagram className="w-4 h-4" aria-hidden="true" />
               </a>
             </div>
           </div>
 
           {/* Navigation */}
-          <div>
+          <nav aria-label="Schnellzugriff">
             <h3 className="font-semibold mb-4 text-white">
               Schnellzugriff
             </h3>
@@ -59,17 +63,17 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={`text-slate-400 hover:${theme.primary} transition-colors`}
+                    className="text-slate-300 hover:text-white transition-colors focus:outline-none focus-visible:underline focus-visible:text-white"
                   >
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
           {/* Services */}
-          <div>
+          <nav aria-label="Services">
             <h3 className="font-semibold mb-4 text-white">
               Services
             </h3>
@@ -84,30 +88,36 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-slate-400 hover:text-white transition-colors"
+                    className="text-slate-300 hover:text-white transition-colors focus:outline-none focus-visible:underline focus-visible:text-white"
                   >
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
         </div>
 
         {/* Bottom Bar */}
         <div className="mt-10 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-400">
             © {new Date().getFullYear()} ZernsdorfConnect. Alle Rechte vorbehalten.
           </p>
-          <div className="flex items-center gap-4 text-sm text-slate-500">
-            <Link href="/imprint" className="hover:text-white transition-colors">
+          <nav className="flex items-center gap-4 text-sm" aria-label="Rechtliche Links">
+            <Link
+              href="/imprint"
+              className="text-slate-400 hover:text-white transition-colors focus:outline-none focus-visible:underline focus-visible:text-white"
+            >
               Impressum
             </Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">
+            <Link
+              href="/privacy"
+              className="text-slate-400 hover:text-white transition-colors focus:outline-none focus-visible:underline focus-visible:text-white"
+            >
               Datenschutz
             </Link>
             <CookieSettingsButton />
-          </div>
+          </nav>
         </div>
       </div>
     </footer>
